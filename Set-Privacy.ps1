@@ -28,12 +28,16 @@ param(
   [parameter(Mandatory=$true,ParameterSetName = "Default")]
   [switch]$Default,
   [parameter(Mandatory=$true,ParameterSetName = "Balanced")]
-  [switch]$Balanced
+  [switch]$Balanced,
+  [parameter(Mandatory=$true,ParameterSetName = "Dev")]
+  [switch]$Dev
 )
 
 
 Begin
 {
+
+#requires -version 5
 
 Function Test-RegistryValue([String]$Path,[String]$Name){
 
@@ -44,6 +48,18 @@ Function Test-RegistryValue([String]$Path,[String]$Name){
       return $true
   } else {
       return $false
+  }
+}
+
+Function Get-RegistryValue([String]$Path,[String]$Name){
+
+  if (!(Test-Path $Path)) { return $null }
+   
+  $Key = Get-Item -LiteralPath $Path
+  if ($Key.GetValue($Name, $null) -ne $null) {
+      return $Key.GetValue($Name, $null)
+  } else {
+      return $null
   }
 }
 
@@ -106,6 +122,11 @@ Function DeviceAccess([string]$guid,[string]$value)
     Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{$guid}" -Name Value -Value $value
 }
 
+Function DeviceAccessApp([string]$app,[string]$guid,[string]$value)
+{
+    Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\$app\{$guid}" -Name Value -Value $value
+}
+
 Function SpeachInkingTyping([string]$value)
 {
 
@@ -145,10 +166,61 @@ Function AccountInfo([string]$value)
     DeviceAccess -guid "C1D23ACC-752B-43E5-8448-8D0E519CD6D6" -value $value
 }
 
+Function Contacts([string]$value)
+{
 
+    $exclude = $script:sidCortana + "|" + $script:sidPeople
+
+    Get-ChildItem HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess | ForEach-Object{
+
+        $app = $_.PSChildName
+
+        if ($app -ne "Global")
+        {
+            $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
+
+            $contactsGUID = "7D7E8402-7C54-4821-A34E-AEEFD62DED93"
+           
+            $key += "\{$contactsGUID}"
+
+            if (Test-Path "$key")
+            {
+                if ($app -notmatch $exclude)
+                {
+                    DeviceAccessApp -app $app -guid $contactsGUID -value $value
+                }
+            }
+        }
+    }
+}
+
+    Function Get-AppSID()
+    {
+
+        Get-ChildItem "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings" | foreach {
+
+            $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
+
+            $val = Get-RegistryValue -Path $key -Name "Moniker" 
+
+            if ($val -ne $null)
+            {
+                if ($val -match "^microsoft\.people_")
+                {
+                    $script:sidPeople = $_.PsChildName
+                }
+                if ($val -match "^microsoft\.windows\.cortana")
+                {
+                    $script:sidCortana = $_.PsChildName
+                }
+            }     
+        }              
+    }
 }
 End
 {
+
+    Get-AppSID
 
     if ($Strong)
     {
@@ -161,6 +233,7 @@ End
         Microphone  -value "Deny"
         SpeachInkingTyping -value "Deny"
         AccountInfo -value "Deny"
+        Contacts -value "Deny"
         Report        
     }
 
@@ -175,7 +248,13 @@ End
         Microphone  -value "Allow"    
         SpeachInkingTyping -value "Allow" 
         AccountInfo -value "Allow"
+        Contacts -value "Allow"
         Report
+    }
+
+    if ($Dev)
+    {
+
     }
 
 }
