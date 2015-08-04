@@ -9,10 +9,15 @@
     Reverts to Windows defaults 
 .PARAMETER Balanced
     Turns off certain things but not everything.
+.PARAMETER Admin
+    Updates machine settings rather than user settings, still requires Strong,Balanced or Default switches. Needs to run as elevated admin.
 
 .EXAMPLE       
     Set-Privacy -Balanced
-    Runs the script to the balanced privacy settings    
+    Runs the script to set the balanced privacy settings  
+.EXAMPLE       
+    Set-Privacy -Strong -Admin
+    Runs the script to set the strong settings on the machine level. This covers Windows update and WiFi sense.      
 .NOTES
     Should work with PowerShell 5 on Windows 10
     Author:  Peter Hahndorf
@@ -29,8 +34,10 @@ param(
   [switch]$Default,
   [parameter(Mandatory=$true,ParameterSetName = "Balanced")]
   [switch]$Balanced,
-  [parameter(Mandatory=$true,ParameterSetName = "Dev")]
-  [switch]$Dev
+  [parameter(ParameterSetName = "Balanced")]
+  [parameter(ParameterSetName = "Default")]
+  [parameter(ParameterSetName = "Strong")]
+  [switch]$Admin
 )
 
 
@@ -39,64 +46,63 @@ Begin
 
 #requires -version 5
 
-Function Test-RegistryValue([String]$Path,[String]$Name){
+    Function Test-RegistryValue([String]$Path,[String]$Name){
 
-  if (!(Test-Path $Path)) { return $false }
+      if (!(Test-Path $Path)) { return $false }
    
-  $Key = Get-Item -LiteralPath $Path
-  if ($Key.GetValue($Name, $null) -ne $null) {
-      return $true
-  } else {
-      return $false
-  }
-}
+      $Key = Get-Item -LiteralPath $Path
+      if ($Key.GetValue($Name, $null) -ne $null) {
+          return $true
+      } else {
+          return $false
+      }
+    }
 
-Function Get-RegistryValue([String]$Path,[String]$Name){
+    Function Get-RegistryValue([String]$Path,[String]$Name){
 
-  if (!(Test-Path $Path)) { return $null }
+      if (!(Test-Path $Path)) { return $null }
    
-  $Key = Get-Item -LiteralPath $Path
-  if ($Key.GetValue($Name, $null) -ne $null) {
-      return $Key.GetValue($Name, $null)
-  } else {
-      return $null
-  }
-}
-
-Function Add-RegistryDWord([String]$Path,[String]$Name,[int32]$value){
-
-    If (Test-RegistryValue $Path $Name)
-    {
-        Set-ItemProperty -Path $Path -Name $Name –Value $value
-    }
-    else
-    {
-        New-ItemProperty -Path $Path -Name $Name -PropertyType DWord -Value $value 
+      $Key = Get-Item -LiteralPath $Path
+      if ($Key.GetValue($Name, $null) -ne $null) {
+          return $Key.GetValue($Name, $null)
+      } else {
+          return $null
+      }
     }
 
+    Function Add-RegistryDWord([String]$Path,[String]$Name,[int32]$value){
 
-    Write-Verbose "$Path\$Name - $value"
-}
+        If (Test-RegistryValue $Path $Name)
+        {
+            Set-ItemProperty -Path $Path -Name $Name –Value $value
+        }
+        else
+        {
+            New-ItemProperty -Path $Path -Name $Name -PropertyType DWord -Value $value 
+        }
 
-Function Add-RegistryString([String]$Path,[String]$Name,[string]$value){
 
-    If (Test-RegistryValue $Path $Name)
-    {
-        Set-ItemProperty -Path $Path -Name $Name –Value $value
+        Write-Verbose "$Path\$Name - $value"
     }
-    else
-    {
-        New-ItemProperty -Path $Path -Name $Name -PropertyType String -Value $value 
+
+    Function Add-RegistryString([String]$Path,[String]$Name,[string]$value){
+
+        If (Test-RegistryValue $Path $Name)
+        {
+            Set-ItemProperty -Path $Path -Name $Name –Value $value
+        }
+        else
+        {
+            New-ItemProperty -Path $Path -Name $Name -PropertyType String -Value $value 
+        }
+
+
+        Write-Verbose "$Path\$Name - $value"
     }
 
-
-    Write-Verbose "$Path\$Name - $value"
-}
-
-Function Get-AppSID()
-{
-
-    Get-ChildItem "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings" | foreach {
+    Function Get-AppSID()
+                                                                {
+        Get-ChildItem "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings" | foreach {
 
         $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
 
@@ -114,69 +120,69 @@ Function Get-AppSID()
             }
         }     
     }              
-}
+    }
 
-# Turn on SmartScreen Filter
-Function EnableWebContentEvaluation([int]$value)
-{
-    Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppHost" -Name EnableWebContentEvaluation -Value $value
-}
+    # Turn on SmartScreen Filter
+    Function EnableWebContentEvaluation([int]$value)
+    {
+        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppHost" -Name EnableWebContentEvaluation -Value $value
+    }
 
-# Send Microsoft info about how to write to help us improve typing and writing in the future
-Function TIPC([int]$value)
-{
-    Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Input\TIPC" -Name Enabled -Value $value
-}
+    # Send Microsoft info about how to write to help us improve typing and writing in the future
+    Function TIPC([int]$value)
+    {
+        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Input\TIPC" -Name Enabled -Value $value
+    }
 
-# Let apps use my advertising ID for experience across apps
-Function AdvertisingInfo([int]$value)
-{
-    Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name Enabled -Value $value
-}
+    # Let apps use my advertising ID for experience across apps
+    Function AdvertisingInfo([int]$value)
+    {
+        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name Enabled -Value $value
+    }
 
-# Let websites provice locally relevant content by accessing my language list
-Function HttpAcceptLanguageOptOut([int]$value)
-{
-    Add-RegistryDWord -Path "HKCU:\Control Panel\International\User Profile" -Name HttpAcceptLanguageOptOut -Value $value
-}
+    # Let websites provice locally relevant content by accessing my language list
+    Function HttpAcceptLanguageOptOut([int]$value)
+    {
+        Add-RegistryDWord -Path "HKCU:\Control Panel\International\User Profile" -Name HttpAcceptLanguageOptOut -Value $value
+    }
 
-Function DeviceAccess([string]$guid,[string]$value)
-{
-    Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{$guid}" -Name Value -Value $value
-}
+    Function DeviceAccess([string]$guid,[string]$value)
+    {
+        Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{$guid}" -Name Value -Value $value
+    }
 
-Function DeviceAccessName([string]$name,[string]$value)
-{
-    Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\$name" -Name Value -Value $value
-}
+    Function DeviceAccessName([string]$name,[string]$value)
+    {
+        Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\$name" -Name Value -Value $value
+    }
 
-Function DeviceAccessApp([string]$app,[string]$guid,[string]$value)
-{
-    Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\$app\{$guid}" -Name Value -Value $value
-}
+    Function DeviceAccessApp([string]$app,[string]$guid,[string]$value)
+    {
+        Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\$app\{$guid}" -Name Value -Value $value
+    }
 
-Function SpeachInkingTyping([string]$value)
-{
+    Function SpeachInkingTyping([string]$value)
+    {
 
-# needs work, does about 64 registry changes
+    # needs work, does about 64 registry changes
 
-}
+    }
 
-Function Report()
-{
-    Write-Host "Privacy settings changed"
-    Exit 0
-}
+    Function Report()
+    {
+        Write-Host "Privacy settings changed"
+        Exit 0
+    }
 
-Function Location([string]$value)
-{
-    DeviceAccess -guid "BFA794E4-F964-4FDB-90F6-51056BFE4B44" -value $value
-}
+    Function Location([string]$value)
+    {
+        DeviceAccess -guid "BFA794E4-F964-4FDB-90F6-51056BFE4B44" -value $value
+    }
 
-Function Camera([string]$value)
-{
-    DeviceAccess -guid "E5323777-F976-4f5b-9B55-B94699C46E44" -value $value
-}
+    Function Camera([string]$value)
+    {
+        DeviceAccess -guid "E5323777-F976-4f5b-9B55-B94699C46E44" -value $value
+    }
 
     Function Microphone([string]$value)
     {
@@ -249,22 +255,55 @@ Function Camera([string]$value)
         }
     }
 
+    Function DODownloadMode([int]$value)
+    {
+
+        # 0 = Off
+        # 1 = PCs on my local network
+        # 3 = PCs on my local network, and PCs on the Internet
+
+        Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name DODownloadMode -Value $value        
+    }
+
 }
 Process
 {
-
-
-
-
-}
-End
-{
+    
     $myOS = Get-CimInstance -ClassName Win32_OperatingSystem -Namespace root/cimv2 -Verbose:$false
 
     if ([int]$myOS.BuildNumber -lt 10240)
     {   
         Write-Warning "Your OS version is not supported, Windows 10 or higher is required" 
         Exit 101
+    }
+
+    if ($Admin)
+    {
+
+        $UserCurrent = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+        $userIsAdmin = $false
+        $UserCurrent.Groups | ForEach-Object { if($_.value -eq "S-1-5-32-544") {$userIsAdmin = $true} }
+
+        if (!($userIsAdmin))
+        {
+            Write-Warning "When using -admin, please run this script as elevated administrator"
+            Exit 102
+        }
+
+        if ($Strong)
+        {
+            DODownloadMode -value 0
+        }
+        if ($Balanced)
+        {
+            DODownloadMode -value 1
+        }
+        if ($Default)
+        {
+            DODownloadMode -value 3
+        }
+
+        Report
     }
 
     Get-AppSID
@@ -310,6 +349,7 @@ End
         Radios -value "Deny"
         LooselyCoupled -value "Deny"
         NumberOfSIUFInPeriod -value 0
+
         Report        
     }
 
@@ -330,12 +370,18 @@ End
         Radios -value "Allow"
         LooselyCoupled -value "Allow"
         NumberOfSIUFInPeriod -value -1
+
+        if ($Admin)
+        {
+            DODownloadMode -value 3
+        }
+
         Report
     }
 
-    if ($Dev)
-    {
-        # for development only
-    }
+}
+End
+{
+
 
 }
