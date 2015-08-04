@@ -44,7 +44,7 @@ param(
 Begin
 {
 
-#requires -version 5
+#requires -version 3
 
     Function Test-RegistryValue([String]$Path,[String]$Name){
 
