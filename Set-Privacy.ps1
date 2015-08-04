@@ -18,6 +18,9 @@
 .EXAMPLE       
     Set-Privacy -Strong -Admin
     Runs the script to set the strong settings on the machine level. This covers Windows update and WiFi sense.      
+.EXAMPLE       
+    Set-Privacy -Default -Verbose
+    Runs the script to reset the privacy settings to the defaults. Shows which registry values are changed.
 .NOTES
     Should work with PowerShell 5 on Windows 10
     Author:  Peter Hahndorf
@@ -370,11 +373,6 @@ Process
         Radios -value "Allow"
         LooselyCoupled -value "Allow"
         NumberOfSIUFInPeriod -value -1
-
-        if ($Admin)
-        {
-            DODownloadMode -value 3
-        }
 
         Report
     }
