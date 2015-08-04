@@ -93,6 +93,29 @@ Function Add-RegistryString([String]$Path,[String]$Name,[string]$value){
     Write-Verbose "$Path\$Name - $value"
 }
 
+Function Get-AppSID()
+{
+
+    Get-ChildItem "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings" | foreach {
+
+        $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
+
+        $val = Get-RegistryValue -Path $key -Name "Moniker" 
+
+        if ($val -ne $null)
+        {
+            if ($val -match "^microsoft\.people_")
+            {
+                $script:sidPeople = $_.PsChildName
+            }
+            if ($val -match "^microsoft\.windows\.cortana")
+            {
+                $script:sidCortana = $_.PsChildName
+            }
+        }     
+    }              
+}
+
 # Turn on SmartScreen Filter
 Function EnableWebContentEvaluation([int]$value)
 {
@@ -120,6 +143,11 @@ Function HttpAcceptLanguageOptOut([int]$value)
 Function DeviceAccess([string]$guid,[string]$value)
 {
     Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{$guid}" -Name Value -Value $value
+}
+
+Function DeviceAccessName([string]$name,[string]$value)
+{
+    Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\$name" -Name Value -Value $value
 }
 
 Function DeviceAccessApp([string]$app,[string]$guid,[string]$value)
@@ -150,10 +178,76 @@ Function Camera([string]$value)
     DeviceAccess -guid "E5323777-F976-4f5b-9B55-B94699C46E44" -value $value
 }
 
-Function Microphone([string]$value)
-{
-    DeviceAccess -guid "2EEF81BE-33FA-4800-9670-1CD474972C3F" -value $value
-}
+    Function Microphone([string]$value)
+    {
+        DeviceAccess -guid "2EEF81BE-33FA-4800-9670-1CD474972C3F" -value $value
+    }
+
+    Function Contacts([string]$value)
+    {
+
+        $exclude = $script:sidCortana + "|" + $script:sidPeople
+
+        Get-ChildItem HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess | ForEach-Object{
+
+            $app = $_.PSChildName
+
+            if ($app -ne "Global")
+            {
+                $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
+
+                $contactsGUID = "7D7E8402-7C54-4821-A34E-AEEFD62DED93"
+           
+                $key += "\{$contactsGUID}"
+
+                if (Test-Path "$key")
+                {
+                    if ($app -notmatch $exclude)
+                    {
+                        DeviceAccessApp -app $app -guid $contactsGUID -value $value
+                    }
+                }
+            }
+        }
+    }
+
+    Function Calendar([string]$value)
+    {
+        DeviceAccess -guid "D89823BA-7180-4B81-B50C-7E471E6121A3" -value $value
+    }
+
+    Function AccountInfo([string]$value)
+    {
+        DeviceAccess -guid "C1D23ACC-752B-43E5-8448-8D0E519CD6D6" -value $value
+    }
+
+    Function Messaging([string]$value)
+    {
+        DeviceAccess -guid "992AFA70-6F47-4148-B3E9-3003349C1548" -value $value
+    }
+
+    Function Radios([string]$value)
+    {
+        DeviceAccess -guid "A8804298-2D5F-42E3-9531-9C8C39EB29CE" -value $value
+    }
+
+    Function LooselyCoupled([string]$value)
+    {
+        DeviceAccessName -name "LooselyCoupled" -value $value
+    }
+
+    Function NumberOfSIUFInPeriod([int]$value)
+    {
+        if ($value -lt 0)
+        {
+            # remove entry
+            Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules" -Name NumberOfSIUFInPeriod
+        }
+        else
+        {
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules" -Name NumberOfSIUFInPeriod -Value $value
+        }
+    }
 
 }
 Process
@@ -161,69 +255,24 @@ Process
 
 
 
-Function AccountInfo([string]$value)
-{
-    DeviceAccess -guid "C1D23ACC-752B-43E5-8448-8D0E519CD6D6" -value $value
-}
 
-Function Contacts([string]$value)
-{
-
-    $exclude = $script:sidCortana + "|" + $script:sidPeople
-
-    Get-ChildItem HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess | ForEach-Object{
-
-        $app = $_.PSChildName
-
-        if ($app -ne "Global")
-        {
-            $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
-
-            $contactsGUID = "7D7E8402-7C54-4821-A34E-AEEFD62DED93"
-           
-            $key += "\{$contactsGUID}"
-
-            if (Test-Path "$key")
-            {
-                if ($app -notmatch $exclude)
-                {
-                    DeviceAccessApp -app $app -guid $contactsGUID -value $value
-                }
-            }
-        }
-    }
-}
-
-    Function Get-AppSID()
-    {
-
-        Get-ChildItem "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings" | foreach {
-
-            $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
-
-            $val = Get-RegistryValue -Path $key -Name "Moniker" 
-
-            if ($val -ne $null)
-            {
-                if ($val -match "^microsoft\.people_")
-                {
-                    $script:sidPeople = $_.PsChildName
-                }
-                if ($val -match "^microsoft\.windows\.cortana")
-                {
-                    $script:sidCortana = $_.PsChildName
-                }
-            }     
-        }              
-    }
 }
 End
 {
+    $myOS = Get-CimInstance -ClassName Win32_OperatingSystem -Namespace root/cimv2 -Verbose:$false
+
+    if ([int]$myOS.BuildNumber -lt 10240)
+    {   
+        Write-Warning "Your OS version is not supported, Windows 10 or higher is required" 
+        Exit 101
+    }
 
     Get-AppSID
 
     if ($Strong)
     {
+        # turn off as much as we can
+
         EnableWebContentEvaluation -value 0
         TIPC -value  0
         AdvertisingInfo  -value 0    
@@ -234,6 +283,33 @@ End
         SpeachInkingTyping -value "Deny"
         AccountInfo -value "Deny"
         Contacts -value "Deny"
+        Calendar -value "Deny"
+        Messaging -value "Deny"
+        Radios -value "Deny"
+        LooselyCoupled -value "Deny"
+        NumberOfSIUFInPeriod -value 0
+        Report        
+    }
+
+    if ($Balanced)
+    {
+        # still have to decide what to turn off
+
+        EnableWebContentEvaluation -value 1
+        TIPC -value  0
+        AdvertisingInfo  -value 0    
+        HttpAcceptLanguageOptOut  -value 1
+        Location  -value "Deny"
+        Camera  -value "Deny"
+        Microphone  -value "Deny"
+        SpeachInkingTyping -value "Deny"
+        AccountInfo -value "Deny"
+        Contacts -value "Deny"
+        Calendar -value "Deny"
+        Messaging -value "Deny"
+        Radios -value "Deny"
+        LooselyCoupled -value "Deny"
+        NumberOfSIUFInPeriod -value 0
         Report        
     }
 
@@ -249,12 +325,17 @@ End
         SpeachInkingTyping -value "Allow" 
         AccountInfo -value "Allow"
         Contacts -value "Allow"
+        Calendar -value "Allow"
+        Messaging -value "Allow"
+        Radios -value "Allow"
+        LooselyCoupled -value "Allow"
+        NumberOfSIUFInPeriod -value -1
         Report
     }
 
     if ($Dev)
     {
-
+        # for development only
     }
 
 }
