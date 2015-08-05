@@ -22,7 +22,7 @@
     Set-Privacy -Default -Verbose
     Runs the script to reset the privacy settings to the defaults. Shows which registry values are changed.
 .NOTES
-    Should work with PowerShell 5 on Windows 10
+    Should work on Windows 10 and higher
     Author:  Peter Hahndorf
     Created: August 4th, 2015 
     
@@ -48,6 +48,8 @@ Begin
 {
 
 #requires -version 3
+
+    # ----------- Helper Functions -----------
 
     Function Test-RegistryValue([String]$Path,[String]$Name){
 
@@ -103,8 +105,8 @@ Begin
         Write-Verbose "$Path\$Name - $value"
     }
 
-    Function Get-AppSID()
-                                                                {
+    Function Get-AppSID(){
+
         Get-ChildItem "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Mappings" | foreach {
 
         $key = $_.Name -replace "HKEY_CURRENT_USER","HKCU:"
@@ -125,75 +127,72 @@ Begin
     }              
     }
 
-    # Turn on SmartScreen Filter
-    Function EnableWebContentEvaluation([int]$value)
-    {
-        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppHost" -Name EnableWebContentEvaluation -Value $value
-    }
-
-    # Send Microsoft info about how to write to help us improve typing and writing in the future
-    Function TIPC([int]$value)
-    {
-        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Input\TIPC" -Name Enabled -Value $value
-    }
-
-    # Let apps use my advertising ID for experience across apps
-    Function AdvertisingInfo([int]$value)
-    {
-        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name Enabled -Value $value
-    }
-
-    # Let websites provice locally relevant content by accessing my language list
-    Function HttpAcceptLanguageOptOut([int]$value)
-    {
-        Add-RegistryDWord -Path "HKCU:\Control Panel\International\User Profile" -Name HttpAcceptLanguageOptOut -Value $value
-    }
-
-    Function DeviceAccess([string]$guid,[string]$value)
-    {
+    Function DeviceAccess([string]$guid,[string]$value){
         Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\{$guid}" -Name Value -Value $value
     }
 
-    Function DeviceAccessName([string]$name,[string]$value)
-    {
+    Function DeviceAccessName([string]$name,[string]$value){
         Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\Global\$name" -Name Value -Value $value
     }
 
-    Function DeviceAccessApp([string]$app,[string]$guid,[string]$value)
-    {
+    Function DeviceAccessApp([string]$app,[string]$guid,[string]$value){
+
         Add-RegistryString -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess\$app\{$guid}" -Name Value -Value $value
     }
 
-    Function SpeachInkingTyping([string]$value)
-    {
+    Function Report(){
+
+        Write-Host "Privacy settings changed"
+        Exit 0
+    }
+
+    # ----------- User Privacy Functions -----------
+    
+    Function EnableWebContentEvaluation([int]$value){
+        
+        # Turn on SmartScreen Filter
+        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppHost" -Name EnableWebContentEvaluation -Value $value
+    }
+
+    Function TIPC([int]$value){
+
+        # Send Microsoft info about how to write to help us improve typing and writing in the future
+        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Input\TIPC" -Name Enabled -Value $value
+    }
+
+    Function AdvertisingInfo([int]$value){
+
+       # Let apps use my advertising ID for experience across apps
+        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name Enabled -Value $value
+    }
+
+    Function HttpAcceptLanguageOptOut([int]$value){
+
+        # Let websites provice locally relevant content by accessing my language list
+        Add-RegistryDWord -Path "HKCU:\Control Panel\International\User Profile" -Name HttpAcceptLanguageOptOut -Value $value
+    }
+
+    Function SpeachInkingTyping([string]$value){
 
     # needs work, does about 64 registry changes
 
     }
 
-    Function Report()
-    {
-        Write-Host "Privacy settings changed"
-        Exit 0
-    }
+    Function Location([string]$value){
 
-    Function Location([string]$value)
-    {
         DeviceAccess -guid "BFA794E4-F964-4FDB-90F6-51056BFE4B44" -value $value
     }
 
-    Function Camera([string]$value)
-    {
+    Function Camera([string]$value){
+
         DeviceAccess -guid "E5323777-F976-4f5b-9B55-B94699C46E44" -value $value
     }
 
-    Function Microphone([string]$value)
-    {
+    Function Microphone([string]$value){
         DeviceAccess -guid "2EEF81BE-33FA-4800-9670-1CD474972C3F" -value $value
     }
 
-    Function Contacts([string]$value)
-    {
+    Function Contacts([string]$value){
 
         $exclude = $script:sidCortana + "|" + $script:sidPeople
 
@@ -220,33 +219,31 @@ Begin
         }
     }
 
-    Function Calendar([string]$value)
-    {
+    Function Calendar([string]$value){
         DeviceAccess -guid "D89823BA-7180-4B81-B50C-7E471E6121A3" -value $value
     }
 
-    Function AccountInfo([string]$value)
-    {
+    Function AccountInfo([string]$value){
         DeviceAccess -guid "C1D23ACC-752B-43E5-8448-8D0E519CD6D6" -value $value
     }
 
-    Function Messaging([string]$value)
-    {
+    Function Messaging([string]$value){
+
         DeviceAccess -guid "992AFA70-6F47-4148-B3E9-3003349C1548" -value $value
     }
 
-    Function Radios([string]$value)
-    {
+    Function Radios([string]$value){
+
         DeviceAccess -guid "A8804298-2D5F-42E3-9531-9C8C39EB29CE" -value $value
     }
 
-    Function LooselyCoupled([string]$value)
-    {
+    Function LooselyCoupled([string]$value){
+
         DeviceAccessName -name "LooselyCoupled" -value $value
     }
 
-    Function NumberOfSIUFInPeriod([int]$value)
-    {
+    Function NumberOfSIUFInPeriod([int]$value){
+
         if ($value -lt 0)
         {
             # remove entry
@@ -258,14 +255,21 @@ Begin
         }
     }
 
-    Function DODownloadMode([int]$value)
-    {
+    # ----------- Machine Settings Functions -----------
+
+    Function DODownloadMode([int]$value){
 
         # 0 = Off
         # 1 = PCs on my local network
         # 3 = PCs on my local network, and PCs on the Internet
 
         Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name DODownloadMode -Value $value        
+    }
+
+    Function WifiSense([int]$value){
+
+         Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseCredShared -Value $value        
+         Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseOpen -Value $value        
     }
 
 }
@@ -296,14 +300,17 @@ Process
         if ($Strong)
         {
             DODownloadMode -value 0
+            WifiSense -value 0
         }
         if ($Balanced)
         {
             DODownloadMode -value 1
+            WifiSense -value 0
         }
         if ($Default)
         {
             DODownloadMode -value 3
+            WifiSense -value 1
         }
 
         Report
