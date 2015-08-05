@@ -18,9 +18,6 @@
 .EXAMPLE       
     Set-Privacy -Strong -Admin
     Runs the script to set the strong settings on the machine level. This covers Windows update and WiFi sense.      
-.EXAMPLE       
-    Set-Privacy -Default -Verbose
-    Runs the script to reset the privacy settings to the defaults. Shows which registry values are changed.
 .NOTES
     Should work on Windows 10 and higher
     Author:  Peter Hahndorf
@@ -49,6 +46,8 @@ Begin
 
 #requires -version 3
 
+# check https://fix10.isleaked.com/ for changing things manually.
+
     # ----------- Helper Functions -----------
 
     Function Test-RegistryValue([String]$Path,[String]$Name){
@@ -75,7 +74,50 @@ Begin
       }
     }
 
+    Function Remove-RegistryValue([String]$Path,[String]$Name){
+
+        $old = Get-RegistryValue -Path $Path -Name $Name
+        if ($old -ne $null)
+        {
+            Remove-ItemProperty -Path "$Path" -Name "$Name"
+            Write-Host "$Path\$Name removed" -ForegroundColor Yellow
+        }
+        else
+        {
+            Write-Host "$Path\$Name does not exist" -ForegroundColor Green
+        }
+
+    }
+
+    Function Create-RegistryKey([string]$path)
+    {        
+        # creates a parent key and if needed grandparent key as well
+        # for this script that is good enough
+
+        If (!(Test-Path $Path))
+        {
+            $parent = [System.IO.Path]::GetDirectoryName($path)
+            If (!(Test-Path $parent))
+            {
+                New-item -Path $parent | Out-Null
+            }
+
+            New-item -Path $Path | Out-Null
+        }
+    }
+
     Function Add-RegistryDWord([String]$Path,[String]$Name,[int32]$value){
+
+        $old = Get-RegistryValue -Path $Path -Name $Name
+        if ($old -ne $null)
+        {
+            if ([int32]$old -eq $value)
+            {
+                Write-Host "$Path\$Name already set to $value" -ForegroundColor Green
+                return
+            }
+        }
+
 
         If (Test-RegistryValue $Path $Name)
         {
@@ -83,26 +125,38 @@ Begin
         }
         else
         {
-            New-ItemProperty -Path $Path -Name $Name -PropertyType DWord -Value $value 
+            Create-RegistryKey -path $path
+            New-ItemProperty -Path $Path -Name $Name -PropertyType DWord -Value $value | Out-Null
         }
 
 
-        Write-Verbose "$Path\$Name - $value"
+        Write-Host "$Path\$Name changed to $value" -ForegroundColor Yellow
     }
 
     Function Add-RegistryString([String]$Path,[String]$Name,[string]$value){
 
+
+        $old = Get-RegistryValue -Path $Path -Name $Name
+        if ($old -ne $null)
+        {
+            if ([string]$old -eq $value)
+            {
+                Write-Host "$Path\$Name already set to $value" -ForegroundColor Green
+                return
+            }
+        }
+
         If (Test-RegistryValue $Path $Name)
         {
             Set-ItemProperty -Path $Path -Name $Name –Value $value
         }
         else
         {
-            New-ItemProperty -Path $Path -Name $Name -PropertyType String -Value $value 
+            Create-RegistryKey -path $path
+            New-ItemProperty -Path $Path -Name $Name -PropertyType String -Value $value |Out-Null
         }
 
-
-        Write-Verbose "$Path\$Name - $value"
+        Write-Host "$Path\$Name changed to $value" -ForegroundColor Yellow
     }
 
     Function Get-AppSID(){
@@ -247,7 +301,7 @@ Begin
         if ($value -lt 0)
         {
             # remove entry
-            Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules" -Name NumberOfSIUFInPeriod
+            Remove-RegistryValue -Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules" -Name NumberOfSIUFInPeriod
         }
         else
         {
@@ -324,11 +378,11 @@ Process
 
         EnableWebContentEvaluation -value 0
         TIPC -value  0
-        AdvertisingInfo  -value 0    
-        HttpAcceptLanguageOptOut  -value 1
-        Location  -value "Deny"
-        Camera  -value "Deny"
-        Microphone  -value "Deny"
+        AdvertisingInfo -value 0    
+        HttpAcceptLanguageOptOut -value 1
+        Location -value "Deny"
+        Camera -value "Deny"
+        Microphone -value "Deny"
         SpeachInkingTyping -value "Deny"
         AccountInfo -value "Deny"
         Contacts -value "Deny"
@@ -346,11 +400,11 @@ Process
 
         EnableWebContentEvaluation -value 1
         TIPC -value  0
-        AdvertisingInfo  -value 0    
-        HttpAcceptLanguageOptOut  -value 1
-        Location  -value "Deny"
-        Camera  -value "Deny"
-        Microphone  -value "Deny"
+        AdvertisingInfo -value 0    
+        HttpAcceptLanguageOptOut -value 1
+        Location -value "Deny"
+        Camera -value "Deny"
+        Microphone -value "Deny"
         SpeachInkingTyping -value "Deny"
         AccountInfo -value "Deny"
         Contacts -value "Deny"
@@ -365,13 +419,13 @@ Process
 
     if ($Default)
     {
-        EnableWebContentEvaluation  -value 1
-        TIPC  -value 1
-        AdvertisingInfo  -value 1    
-        HttpAcceptLanguageOptOut  -value 0
-        Location  -value "Allow" 
-        Camera  -value "Allow"  
-        Microphone  -value "Allow"    
+        EnableWebContentEvaluation -value 1
+        TIPC -value 1
+        AdvertisingInfo -value 1    
+        HttpAcceptLanguageOptOut -value 0
+        Location -value "Allow" 
+        Camera -value "Allow"  
+        Microphone -value "Allow"    
         SpeachInkingTyping -value "Allow" 
         AccountInfo -value "Allow"
         Contacts -value "Allow"
