@@ -326,6 +326,25 @@ Begin
          Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseOpen -Value $value        
     }
 
+    Function Telemetry ([bool]$enable){
+
+        if ($enable)
+        {
+            Set-service -Name DiagTrack -Status Running -StartupType Automatic
+            & sc.exe config dmwappushservice start= delayed-auto
+            Set-service -Name dmwappushservice -Status Running
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollectiong" -Name AllowTelemetry -Value 1
+        }
+        else
+        {
+            Stop-Service -Name dmwappushservice -Force
+            Stop-Service -Name DiagTrack -Force
+            Set-service -Name DiagTrack -StartupType Disabled
+            Set-service -Name dmwappushservice -StartupType Disabled  
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollectiong" -Name AllowTelemetry -Value 0                      
+        }
+    }
+    
 }
 Process
 {
@@ -355,16 +374,19 @@ Process
         {
             DODownloadMode -value 0
             WifiSense -value 0
+            Telemetry -enable $false
         }
         if ($Balanced)
         {
             DODownloadMode -value 1
             WifiSense -value 0
+            Telemetry -enable $false
         }
         if ($Default)
         {
             DODownloadMode -value 3
             WifiSense -value 1
+            Telemetry -enable $true
         }
 
         Report
@@ -390,7 +412,7 @@ Process
         Messaging -value "Deny"
         Radios -value "Deny"
         LooselyCoupled -value "Deny"
-        NumberOfSIUFInPeriod -value 0
+        NumberOfSIUFInPeriod -value 0        
         Report        
     }
 
