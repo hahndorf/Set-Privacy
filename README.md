@@ -60,3 +60,10 @@ allow the execution of local unsigned scripts for this session run:
 To change the execution policy permanently, run:
 
 	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+
+
+###Limitations
+
+**Defender - SpyNet**
+
+The script can currently not disable the participation in SpyNet, you have to do this in the GUI. Under `Update and Security` - `Windows Defender` change 'Cloud-Based Protection' and 'Sample Submission'

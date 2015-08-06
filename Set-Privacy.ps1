@@ -339,6 +339,24 @@ Begin
          Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseOpen -Value $value        
     }
 
+    Function SpyNet([bool]$enable){
+
+        # Access to these registry keys are not allowed for administrators
+        # so this does not work until we change those, and they may be changed back automatically
+        # I assume there is no public API to change these values and that is a good thing.
+
+        if ($enable)
+        {
+       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SpyNetReporting" -Value 2
+       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 1 
+        }
+        else
+        {
+       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SpyNetReporting" -Value 0    
+       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 0                   
+        }      
+    }
+
     Function Telemetry ([bool]$enable){
 
         # http://winaero.com/blog/how-to-disable-telemetry-and-data-collection-in-windows-10/
@@ -391,18 +409,21 @@ Process
             DODownloadMode -value 0
             WifiSense -value 0
             Telemetry -enable $false
+            SpyNet -enable $false
         }
         if ($Balanced)
         {
             DODownloadMode -value 1
             WifiSense -value 0
             Telemetry -enable $false
+            SpyNet -enable $false
         }
         if ($Default)
         {
             DODownloadMode -value 3
             WifiSense -value 1
             Telemetry -enable $true
+            SpyNet -enable $true
         }
 
         Report
