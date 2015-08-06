@@ -28,13 +28,21 @@ After downloading a PowerShell script from the Internet, you should always revie
 
 ###Running the script
 
-Assuming you are still in the location you downloaded the script to, find out more about the parameters you can use for the script:
-
-    help .\Set-Privacy.ps1 -full
-
-and finally run it with one of the required parameters:
+Assuming you are still in the location you downloaded the script to, run it with one of the required parameters:
 
     .\Set-Privacy.ps1 -Strong
+
+this sets the privacy settings for the current user to **Strong**, you also have the choice of **Default** (same as the Windows Express Setup settings) and **Balanced** (somewhere in the middle)
+
+There are some settings for computer rather than individual users, to change those run with the -admin switch
+
+    .\Set-Privacy.ps1 -Strong -admin
+
+###Getting more help
+
+To find out more about the parameters you can use for the script:
+
+    help .\Set-Privacy.ps1 -full
 
 ###Problems running the script
 

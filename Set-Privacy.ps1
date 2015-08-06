@@ -11,6 +11,7 @@
     Turns off certain things but not everything.
 .PARAMETER Admin
     Updates machine settings rather than user settings, still requires Strong,Balanced or Default switches. Needs to run as elevated admin.
+    If this switch is selected, no user settings are changed.
 
 .EXAMPLE       
     Set-Privacy -Balanced
@@ -226,10 +227,22 @@ Begin
         Add-RegistryDWord -Path "HKCU:\Control Panel\International\User Profile" -Name HttpAcceptLanguageOptOut -Value $value
     }
 
-    Function SpeachInkingTyping([string]$value){
+    Function SpeachInkingTyping([bool]$enable){
 
-    # needs work, does about 64 registry changes
-
+        if ($enable)
+        {
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings" -Name AcceptedPrivacyPolicy -Value 1
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitTextCollection -Value 0
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitInkCollection -Value 0
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore" -Name HarvestContacts -Value 1
+        }
+        else
+        {
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings" -Name AcceptedPrivacyPolicy -Value 0
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitTextCollection -Value 1
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitInkCollection -Value 1
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore" -Name HarvestContacts -Value 0    
+        }
     }
 
     Function Location([string]$value){
@@ -296,7 +309,7 @@ Begin
         DeviceAccessName -name "LooselyCoupled" -value $value
     }
 
-    Function NumberOfSIUFInPeriod([int]$value){
+    Function FeedbackFrequency([int]$value){
 
         if ($value -lt 0)
         {
@@ -326,6 +339,28 @@ Begin
          Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseOpen -Value $value        
     }
 
+    Function Telemetry ([bool]$enable){
+
+        # http://winaero.com/blog/how-to-disable-telemetry-and-data-collection-in-windows-10/
+
+        if ($enable)
+        {
+            Set-service -Name DiagTrack -Status Running -StartupType Automatic
+            & sc.exe config dmwappushservice start= delayed-auto
+            Set-service -Name dmwappushservice -Status Running
+            # just setting the value to zero did not do the trick.
+            Remove-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry
+        }
+        else
+        {
+            Stop-Service -Name dmwappushservice -Force
+            Stop-Service -Name DiagTrack -Force
+            Set-service -Name DiagTrack -StartupType Disabled
+            Set-service -Name dmwappushservice -StartupType Disabled  
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry -Value 0                      
+        }
+    }
+    
 }
 Process
 {
@@ -355,21 +390,25 @@ Process
         {
             DODownloadMode -value 0
             WifiSense -value 0
+            Telemetry -enable $false
         }
         if ($Balanced)
         {
             DODownloadMode -value 1
             WifiSense -value 0
+            Telemetry -enable $false
         }
         if ($Default)
         {
             DODownloadMode -value 3
             WifiSense -value 1
+            Telemetry -enable $true
         }
 
         Report
     }
 
+    # this gets internal IDs for certain Apps like Cortana which we need in some functions
     Get-AppSID
 
     if ($Strong)
@@ -383,14 +422,14 @@ Process
         Location -value "Deny"
         Camera -value "Deny"
         Microphone -value "Deny"
-        SpeachInkingTyping -value "Deny"
+        SpeachInkingTyping -enable $false
         AccountInfo -value "Deny"
         Contacts -value "Deny"
         Calendar -value "Deny"
         Messaging -value "Deny"
         Radios -value "Deny"
         LooselyCoupled -value "Deny"
-        NumberOfSIUFInPeriod -value 0
+        FeedbackFrequency -value 0        
         Report        
     }
 
@@ -405,14 +444,14 @@ Process
         Location -value "Deny"
         Camera -value "Deny"
         Microphone -value "Deny"
-        SpeachInkingTyping -value "Deny"
+        SpeachInkingTyping -enable $false
         AccountInfo -value "Deny"
         Contacts -value "Deny"
         Calendar -value "Deny"
         Messaging -value "Deny"
         Radios -value "Deny"
         LooselyCoupled -value "Deny"
-        NumberOfSIUFInPeriod -value 0
+        FeedbackFrequency -value 0
 
         Report        
     }
@@ -426,14 +465,14 @@ Process
         Location -value "Allow" 
         Camera -value "Allow"  
         Microphone -value "Allow"    
-        SpeachInkingTyping -value "Allow" 
+        SpeachInkingTyping -enable $true
         AccountInfo -value "Allow"
         Contacts -value "Allow"
         Calendar -value "Allow"
         Messaging -value "Allow"
         Radios -value "Allow"
         LooselyCoupled -value "Allow"
-        NumberOfSIUFInPeriod -value -1
+        FeedbackFrequency -value -1
 
         Report
     }
