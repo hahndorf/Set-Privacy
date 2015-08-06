@@ -203,25 +203,25 @@ Begin
 
     # ----------- User Privacy Functions -----------
     
-    Function EnableWebContentEvaluation([int]$value){
+    Function SmartScreen([int]$value){
         
         # Turn on SmartScreen Filter
         Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppHost" -Name EnableWebContentEvaluation -Value $value
     }
 
-    Function TIPC([int]$value){
+    Function ImproveTyping([int]$value){
 
         # Send Microsoft info about how to write to help us improve typing and writing in the future
         Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Input\TIPC" -Name Enabled -Value $value
     }
 
-    Function AdvertisingInfo([int]$value){
+    Function AdvertisingId([int]$value){
 
        # Let apps use my advertising ID for experience across apps
         Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name Enabled -Value $value
     }
 
-    Function HttpAcceptLanguageOptOut([int]$value){
+    Function LanguageList([int]$value){
 
         # Let websites provice locally relevant content by accessing my language list
         Add-RegistryDWord -Path "HKCU:\Control Panel\International\User Profile" -Name HttpAcceptLanguageOptOut -Value $value
@@ -304,7 +304,7 @@ Begin
         DeviceAccess -guid "A8804298-2D5F-42E3-9531-9C8C39EB29CE" -value $value
     }
 
-    Function LooselyCoupled([string]$value){
+    Function OtherDevices([string]$value){
 
         DeviceAccessName -name "LooselyCoupled" -value $value
     }
@@ -405,7 +405,7 @@ namespace Win32Api
     Function Telemetry ([bool]$enable){
 
         # http://winaero.com/blog/how-to-disable-telemetry-and-data-collection-in-windows-10/
-
+        # this covers Diagnostic and usage data in 'Feedback and diagnostics'
         if ($enable)
         {
             Set-service -Name DiagTrack -Status Running -StartupType Automatic
@@ -483,21 +483,34 @@ Process
     {
         # turn off as much as we can
 
-        EnableWebContentEvaluation -value 0
-        TIPC -value  0
-        AdvertisingInfo -value 0    
-        HttpAcceptLanguageOptOut -value 1
+        # General
+        AdvertisingId -value 0
+        SmartScreen -value 0
+        ImproveTyping -value  0  
+        LanguageList -value 1
+        # Location
         Location -value "Deny"
+        # Camera
         Camera -value "Deny"
+        # Microphone
         Microphone -value "Deny"
+        # Speach, Inking, Typing
         SpeachInkingTyping -enable $false
+        # Account Info
         AccountInfo -value "Deny"
+        # Contacts
         Contacts -value "Deny"
+        # Calendar
         Calendar -value "Deny"
+        # Messaging
         Messaging -value "Deny"
+        # Radios
         Radios -value "Deny"
-        LooselyCoupled -value "Deny"
-        FeedbackFrequency -value 0        
+        # Other devices
+        OtherDevices -value "Deny"
+        # Feedback & diagnostics         
+        FeedbackFrequency -value 0
+               
         Report        
     }
 
@@ -505,10 +518,10 @@ Process
     {
         # still have to decide what to turn off
 
-        EnableWebContentEvaluation -value 1
-        TIPC -value  0
-        AdvertisingInfo -value 0    
-        HttpAcceptLanguageOptOut -value 1
+        SmartScreen -value 1
+        ImproveTyping -value  0
+        AdvertisingId -value 0    
+        LanguageList -value 0
         Location -value "Deny"
         Camera -value "Deny"
         Microphone -value "Deny"
@@ -518,18 +531,17 @@ Process
         Calendar -value "Deny"
         Messaging -value "Deny"
         Radios -value "Deny"
-        LooselyCoupled -value "Deny"
+        OtherDevices -value "Deny"
         FeedbackFrequency -value 0
-
         Report        
     }
 
     if ($Default)
     {
-        EnableWebContentEvaluation -value 1
-        TIPC -value 1
-        AdvertisingInfo -value 1    
-        HttpAcceptLanguageOptOut -value 0
+        SmartScreen -value 1
+        ImproveTyping -value 1
+        AdvertisingId -value 1    
+        LanguageList -value 0
         Location -value "Allow" 
         Camera -value "Allow"  
         Microphone -value "Allow"    
@@ -539,7 +551,7 @@ Process
         Calendar -value "Allow"
         Messaging -value "Allow"
         Radios -value "Allow"
-        LooselyCoupled -value "Allow"
+        OtherDevices -value "Allow"
         FeedbackFrequency -value -1
 
         Report

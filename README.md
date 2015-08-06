@@ -1,4 +1,4 @@
-# Set-Privacy
+# Set-Privacy.ps1
 PowerShell script to batch-change privacy settings in Windows 10
 
 ## Description
@@ -9,9 +9,7 @@ With so many different privacy settings in Windows 10, it makes sense to have a 
 
 - Windows 10
 
-## Installation and Usage
-
-###Getting the script
+##Getting the script
 
 There are several ways to get the script file to your computer, download the zip, clone the repository, save the content manually into a file. 
 You can also get it with PowerShell:
@@ -26,7 +24,7 @@ then download the script by running the following:
 
 After downloading a PowerShell script from the Internet, you should always review it to make sure it doesn't do anything bad.
 
-###Running the script
+##Running the script
 
 Assuming you are still in the location you downloaded the script to, run it with one of the required parameters:
 
@@ -44,7 +42,7 @@ To find out more about the parameters you can use for the script:
 
     help .\Set-Privacy.ps1 -full
 
-###Problems running the script
+##Problems running the script
 
 You may get one of the following messages when trying to run a script:
 
@@ -62,8 +60,44 @@ To change the execution policy permanently, run:
 	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 
-###Limitations
+##Changes in the Privacy section (user mode)
 
-**Defender - SpyNet**
+Changes are made on all tabs except `Diagnostic and usage data on the Feedback and diagnostics tab` and the `Background Apps` tab.
 
-The script can currently not disable the participation in SpyNet, you have to do this in the GUI. Under `Update and Security` - `Windows Defender` change 'Cloud-Based Protection' and 'Sample Submission'
+**-Strong** turns off as many settings as possible
+
+**-Balanced** keeps: General-SmartScreen and General-LanguageList on
+
+**-Default** turns on everything
+
+##Changes in -admin mode
+
+###Automatic Updates
+
+Choose How Updates Are Delivered:
+
+**-Strong** turns off sharing
+
+**-Balanced** enables sharing on the local network
+
+**-Default** enabled sharing with the internet
+
+###Wi-Fi Sense
+
+**-Strong and -Balanced** turn off something, but as I don't have Wi-Fi, I couldn't test this.
+
+**-Default** turns it back on.
+
+###Windows Defender SpyNet
+
+**-Strong** turns off `Cloud-based protection` and `Sample submission`
+
+**-Balanced and -Default** allow both.
+
+###Diagnostic and usage data 
+
+This is on the Privacy - Feedback and diagnostics tab
+
+**-Strong and -Balanced** set this to `Basic`
+
+**-Default** sets this to `Full (Recommended)`
