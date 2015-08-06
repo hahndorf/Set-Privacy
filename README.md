@@ -5,6 +5,8 @@ PowerShell script to batch-change privacy settings in Windows 10
 
 With so many different privacy settings in Windows 10, it makes sense to have a script to change them.
 
+This is still a work in progress. My current Windows 10 setup does not allow me to test all the various privacy settings.
+
 ## Requirements
 
 - Windows 10

@@ -12,13 +12,22 @@
 .PARAMETER Admin
     Updates machine settings rather than user settings, still requires Strong,Balanced or Default switches. Needs to run as elevated admin.
     If this switch is selected, no user settings are changed.
+.PARAMETER Features
+    A comma separated list of features to disable or enable. Use the Tab key to show all allowed values
+.PARAMETER Disable
+    Use with -Features to disable all those features
+.PARAMETER Enable
+   Use with -Features to enable all those features
 
 .EXAMPLE       
     Set-Privacy -Balanced
     Runs the script to set the balanced privacy settings  
 .EXAMPLE       
     Set-Privacy -Strong -Admin
-    Runs the script to set the strong settings on the machine level. This covers Windows update and WiFi sense.      
+    Runs the script to set the strong settings on the machine level. This covers Windows update and WiFi sense.   
+.EXAMPLE       
+    Set-Privacy -disable -Features WifiSense,ShareUpdates,Contacts 
+    Disabled those three features to improve your privacy   
 .NOTES
     Requires Windows 10 and higher
     Author:  Peter Hahndorf
@@ -29,18 +38,25 @@
 #>
 
 param(
-  [parameter(Mandatory=$true,ParameterSetName = "Strong")]
-  [switch]$Strong,
-  [parameter(Mandatory=$true,ParameterSetName = "Default")]
-  [switch]$Default,
-  [parameter(Mandatory=$true,ParameterSetName = "Balanced")]
-  [switch]$Balanced,
-  [parameter(ParameterSetName = "Balanced")]
-  [parameter(ParameterSetName = "Default")]
-  [parameter(ParameterSetName = "Strong")]
-  [switch]$Admin
-)
-
+    [parameter(Mandatory=$true,ParameterSetName = "Strong")]
+    [switch]$Strong,
+    [parameter(Mandatory=$true,ParameterSetName = "Default")]
+    [switch]$Default,
+    [parameter(Mandatory=$true,ParameterSetName = "Balanced")]
+    [switch]$Balanced,
+    [parameter(ParameterSetName = "Balanced")]
+    [parameter(ParameterSetName = "Default")]
+    [parameter(ParameterSetName = "Strong")]
+    [switch]$Admin,
+    [parameter(Mandatory=$true,ParameterSetName = "Disable")]
+    [switch]$Disable,
+    [parameter(Mandatory=$true,ParameterSetName = "Enable")]
+    [switch]$Enable,
+    [parameter(Mandatory=$true,ParameterSetName = "Enable")]
+    [parameter(Mandatory=$true,ParameterSetName = "Disable")]
+    [ValidateSet("AdvertisingId","ImproveTyping","Location","Camera","Microphone","SpeachInkingTyping","AccountInfo","Contacts","Calendar","Messaging","Radios","OtherDevices","FeedbackFrequency","ShareUpdates","WifiSense","Telemetry","SpyNet")]
+    [string[]]$Feature
+)           
 
 Begin
 {
@@ -50,6 +66,15 @@ Begin
 # check https://fix10.isleaked.com/ for changing things manually.
 
     # ----------- Helper Functions -----------
+
+    Function Test-Admin()
+    {
+        if (!($userIsAdmin))
+        {
+            Write-Warning "When using -admin switch or specifying a machine setting, please run this script as elevated administrator"
+            Exit 102
+        }
+    }
 
     Function Test-RegistryValue([String]$Path,[String]$Name){
 
@@ -324,7 +349,9 @@ Begin
 
     # ----------- Machine Settings Functions -----------
 
-    Function DODownloadMode([int]$value){
+    Function ShareUpdates([int]$value){
+
+        Test-Admin
 
         # 0 = Off
         # 1 = PCs on my local network
@@ -335,8 +362,10 @@ Begin
 
     Function WifiSense([int]$value){
 
-         Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseCredShared -Value $value        
-         Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseOpen -Value $value        
+        Test-Admin
+
+        Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseCredShared -Value $value        
+        Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseOpen -Value $value        
     }
 
     Function SpyNet([bool]$enable){
@@ -344,6 +373,8 @@ Begin
         # Access to these registry keys are not allowed for administrators
         # so this does not work until we change those,
         # we give admins full permissions and after updating the values change it back.
+
+        Test-Admin
 
 $definition = @"
 using System;
@@ -403,6 +434,8 @@ namespace Win32Api
     }
 
     Function Telemetry ([bool]$enable){
+
+        Test-Admin
 
         # http://winaero.com/blog/how-to-disable-telemetry-and-data-collection-in-windows-10/
         # this covers Diagnostic and usage data in 'Feedback and diagnostics'
@@ -502,22 +535,15 @@ Process
         Exit 101
     }
 
+    $UserCurrent = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $userIsAdmin = $false
+    $UserCurrent.Groups | ForEach-Object { if($_.value -eq "S-1-5-32-544") {$userIsAdmin = $true} }
+
     if ($Admin)
-    {
-
-        $UserCurrent = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-        $userIsAdmin = $false
-        $UserCurrent.Groups | ForEach-Object { if($_.value -eq "S-1-5-32-544") {$userIsAdmin = $true} }
-
-        if (!($userIsAdmin))
-        {
-            Write-Warning "When using -admin, please run this script as elevated administrator"
-            Exit 102
-        }
-
+    {        
         if ($Strong)
         {
-            DODownloadMode -value 0
+            ShareUpdates -value 0
             WifiSense -value 0
             Telemetry -enable $false
             SpyNet -enable $false
@@ -525,7 +551,7 @@ Process
         if ($Balanced)
         {
             # allow LAN sharing of updates
-            DODownloadMode -value 1
+            ShareUpdates -value 1
             WifiSense -value 0
             Telemetry -enable $false
             # in balanced mode, we don't disable SpyNet
@@ -533,7 +559,7 @@ Process
         }
         if ($Default)
         {
-            DODownloadMode -value 3
+            ShareUpdates -value 3
             WifiSense -value 1
             Telemetry -enable $true
             SpyNet -enable $true
@@ -566,6 +592,63 @@ Process
         Set-MiscPrivacyFeature -enable $true
         Set-StrictPrivacyFeature -enable $true  
         Report
+    }
+
+    # handle specific features
+
+    $AllowDeny = "Deny"
+    $OnOff = 0
+    $OffOn = 1   
+    $DoEnable = $false  
+        
+    if ($Enable)
+    {
+        $AllowDeny = "Deny"
+        $OnOff = 1
+        $OffOn = 0
+        $DoEnable = $true 
+    }
+
+
+    $Features | ForEach-Object {
+
+        switch ($_) 
+            { 
+                "AdvertisingId" {AdvertisingId -value $OnOff;break} 
+                "ImproveTyping" {ImproveTyping -value $OnOff;break} 
+                "Location" {Location -value $AllowDeny;break}
+                "Camera" {Camera -value $AllowDeny;break} 
+                "Microphone" {Microphone -value $AllowDeny;break} 
+                "SpeachInkingTyping" {SpeachInkingTyping -enable $DoEnable;break} 
+                "AccountInfo" {AccountInfo -value $AllowDeny;break} 
+                "Contacts" {Contacts -value $AllowDeny;break} 
+                "Calendar" {Calendar -value $AllowDeny;break} 
+                "Messaging" {Messaging -value $AllowDeny;break} 
+                "Radios" {Radios -value $AllowDeny;break} 
+                "OtherDevices" {OtherDevices -value $AllowDeny;break} 
+                "FeedbackFrequency" {
+                        if ($Enable) {
+                            FeedbackFrequency -value -1;
+                        }
+                        else
+                        {
+                            FeedbackFrequency -value 0;
+                        }
+                        break} 
+                "ShareUpdates" {
+                        if ($Enable) {
+                            ShareUpdates -value 3;
+                        }
+                        else
+                        {
+                            ShareUpdates -value 0;
+                        }
+                        break}
+                "WifiSense" {WifiSense -value $OnOff;break}                                                                    
+                "Telemetry" {Telemetry -enable $DoEnable;break} 
+                "SpyNet" {SpyNet -enable $DoEnable ;break}
+                default {"ooops, nothing selected"}
+            }
     }
 
 }
