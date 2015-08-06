@@ -226,10 +226,22 @@ Begin
         Add-RegistryDWord -Path "HKCU:\Control Panel\International\User Profile" -Name HttpAcceptLanguageOptOut -Value $value
     }
 
-    Function SpeachInkingTyping([string]$value){
+    Function SpeachInkingTyping([bool]$enable){
 
-    # needs work, does about 64 registry changes
-
+        if ($enable)
+        {
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings" -Name AcceptedPrivacyPolicy -Value 1
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitTextCollection -Value 0
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitInkCollection -Value 0
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore" -Name HarvestContacts -Value 1
+        }
+        else
+        {
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings" -Name AcceptedPrivacyPolicy -Value 0
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitTextCollection -Value 1
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization" -Name RestrictImplicitInkCollection -Value 1
+            Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore" -Name HarvestContacts -Value 0    
+        }
     }
 
     Function Location([string]$value){
@@ -405,7 +417,7 @@ Process
         Location -value "Deny"
         Camera -value "Deny"
         Microphone -value "Deny"
-        SpeachInkingTyping -value "Deny"
+        SpeachInkingTyping -enable $false
         AccountInfo -value "Deny"
         Contacts -value "Deny"
         Calendar -value "Deny"
@@ -427,7 +439,7 @@ Process
         Location -value "Deny"
         Camera -value "Deny"
         Microphone -value "Deny"
-        SpeachInkingTyping -value "Deny"
+        SpeachInkingTyping -enable $false
         AccountInfo -value "Deny"
         Contacts -value "Deny"
         Calendar -value "Deny"
@@ -448,7 +460,7 @@ Process
         Location -value "Allow" 
         Camera -value "Allow"  
         Microphone -value "Allow"    
-        SpeachInkingTyping -value "Allow" 
+        SpeachInkingTyping -enable $true
         AccountInfo -value "Allow"
         Contacts -value "Allow"
         Calendar -value "Allow"
