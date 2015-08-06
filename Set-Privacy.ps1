@@ -342,19 +342,64 @@ Begin
     Function SpyNet([bool]$enable){
 
         # Access to these registry keys are not allowed for administrators
-        # so this does not work until we change those, and they may be changed back automatically
-        # I assume there is no public API to change these values and that is a good thing.
+        # so this does not work until we change those,
+        # we give admins full permissions and after updating the values change it back.
 
-        if ($enable)
+$definition = @"
+using System;
+using System.Runtime.InteropServices;
+namespace Win32Api
+{
+    public class NtDll
+    {
+        [DllImport("ntdll.dll", EntryPoint="RtlAdjustPrivilege")]
+        public static extern int RtlAdjustPrivilege(ulong Privilege, bool Enable, bool CurrentThread, ref bool Enabled);
+    }
+}
+"@
+                 
+        if (-not ("Win32Api.NtDll" -as [type])) 
         {
-       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SpyNetReporting" -Value 2
-       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 1 
+            Add-Type -TypeDefinition $definition -PassThru | out-null
         }
         else
         {
-       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SpyNetReporting" -Value 0    
-       #     Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 0                   
+             ("Win32Api.NtDll" -as [type]) | Out-Null
+        }
+       
+        $bEnabled = $false
+        # Enable SeTakeOwnershipPrivilege
+        $res = [Win32Api.NtDll]::RtlAdjustPrivilege(9, $true, $false, [ref]$bEnabled)
+
+        $adminGroupSID = "S-1-5-32-544"
+
+        $adminGroupName = (get-wmiobject -class "win32_account" -namespace "root\cimv2" | where-object{$_.sidtype -eq 4 -and $_.Sid -eq "$adminGroupSID"}).Name 
+
+        # we take ownership from SYSTEM and I tried to give it back but that failed. I don't think that's a problem.
+        $key = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\Windows Defender\Spynet", [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree,[System.Security.AccessControl.RegistryRights]::takeownership)
+        $acl = $key.GetAccessControl()
+        $acl.SetOwner([System.Security.Principal.NTAccount]$adminGroupName)
+        $key.SetAccessControl($acl)
+
+        $rule = New-Object System.Security.AccessControl.RegistryAccessRule ("BUILTIN\$adminGroupName","FullControl","Allow")
+        $acl.SetAccessRule($rule)
+        $key.SetAccessControl($acl)
+
+        if ($enable)
+        {
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SpyNetReporting" -Value 2
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 1 
+        }
+        else
+        {
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SpyNetReporting" -Value 0    
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 0                   
         }      
+
+        # remove FUll Access ACE again
+        $acl.RemoveAccessRule($rule) | Out-Null
+        $key.SetAccessControl($acl)
+     
     }
 
     Function Telemetry ([bool]$enable){
@@ -413,10 +458,12 @@ Process
         }
         if ($Balanced)
         {
+            # allow LAN sharing of updates
             DODownloadMode -value 1
             WifiSense -value 0
             Telemetry -enable $false
-            SpyNet -enable $false
+            # in balanced mode, we don't disable SpyNet
+            SpyNet -enable $true
         }
         if ($Default)
         {
