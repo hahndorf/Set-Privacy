@@ -20,7 +20,7 @@
     Set-Privacy -Strong -Admin
     Runs the script to set the strong settings on the machine level. This covers Windows update and WiFi sense.      
 .NOTES
-    Should work on Windows 10 and higher
+    Requires Windows 10 and higher
     Author:  Peter Hahndorf
     Created: August 4th, 2015 
     
@@ -409,7 +409,7 @@ namespace Win32Api
         if ($enable)
         {
             Set-service -Name DiagTrack -Status Running -StartupType Automatic
-            & sc.exe config dmwappushservice start= delayed-auto
+            & sc.exe config dmwappushservice start= delayed-auto | Out-Null
             Set-service -Name dmwappushservice -Status Running
             # just setting the value to zero did not do the trick.
             Remove-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry
@@ -421,6 +421,72 @@ namespace Win32Api
             Set-service -Name DiagTrack -StartupType Disabled
             Set-service -Name dmwappushservice -StartupType Disabled  
             Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry -Value 0                      
+        }
+    }
+
+    # ----------- Grouping Functions -----------
+
+    Function Set-StrictPrivacyFeature([bool]$enable)
+    {
+        #enabled for -default, disabled for -strong and -balanced
+
+        $AllowDeny = "Deny"
+        $OnOff = 0        
+        
+        if ($enable)
+        {
+            $AllowDeny = "Deny"
+            $OnOff = 1
+        }
+
+        # General
+        AdvertisingId -value $OnOff
+        ImproveTyping -value $OnOff          
+        # Location
+        Location -value $AllowDeny
+        # Camera
+        Camera -value $AllowDeny
+        # Microphone
+        Microphone -value $AllowDeny
+        # Speach, Inking, Typing
+        SpeachInkingTyping -enable $enable
+        # Account Info
+        AccountInfo -value $AllowDeny
+        # Contacts
+        Contacts -value $AllowDeny
+        # Calendar
+        Calendar -value $AllowDeny
+        # Messaging
+        Messaging -value $AllowDeny
+        # Radios
+        Radios -value $AllowDeny
+        # Other devices
+        OtherDevices -value $AllowDeny
+        # Feedback & diagnostics         
+        if ($enable)
+        {
+            FeedbackFrequency -value -1
+        }
+        else
+        {
+            FeedbackFrequency -value 0
+        }
+        
+    }
+
+    Function Set-MiscPrivacyFeature([bool]$enable)
+    {            
+        #enabled for -default and -balanced disabled for -strong 
+
+        if ($enable)
+        {
+            SmartScreen -value 1
+            LanguageList -value 0
+        }
+        else
+        {
+            SmartScreen -value 0
+            LanguageList -value 1
         }
     }
     
@@ -481,79 +547,24 @@ Process
 
     if ($Strong)
     {
-        # turn off as much as we can
-
-        # General
-        AdvertisingId -value 0
-        SmartScreen -value 0
-        ImproveTyping -value  0  
-        LanguageList -value 1
-        # Location
-        Location -value "Deny"
-        # Camera
-        Camera -value "Deny"
-        # Microphone
-        Microphone -value "Deny"
-        # Speach, Inking, Typing
-        SpeachInkingTyping -enable $false
-        # Account Info
-        AccountInfo -value "Deny"
-        # Contacts
-        Contacts -value "Deny"
-        # Calendar
-        Calendar -value "Deny"
-        # Messaging
-        Messaging -value "Deny"
-        # Radios
-        Radios -value "Deny"
-        # Other devices
-        OtherDevices -value "Deny"
-        # Feedback & diagnostics         
-        FeedbackFrequency -value 0
-               
+        # turn off as much as we can   
+        Set-MiscPrivacyFeature -enable $false
+        Set-StrictPrivacyFeature -enable $false        
         Report        
     }
 
     if ($Balanced)
     {
-        # still have to decide what to turn off
-
-        SmartScreen -value 1
-        ImproveTyping -value  0
-        AdvertisingId -value 0    
-        LanguageList -value 0
-        Location -value "Deny"
-        Camera -value "Deny"
-        Microphone -value "Deny"
-        SpeachInkingTyping -enable $false
-        AccountInfo -value "Deny"
-        Contacts -value "Deny"
-        Calendar -value "Deny"
-        Messaging -value "Deny"
-        Radios -value "Deny"
-        OtherDevices -value "Deny"
-        FeedbackFrequency -value 0
+        Set-MiscPrivacyFeature -enable $true
+        Set-StrictPrivacyFeature -enable $false
+        
         Report        
     }
 
     if ($Default)
     {
-        SmartScreen -value 1
-        ImproveTyping -value 1
-        AdvertisingId -value 1    
-        LanguageList -value 0
-        Location -value "Allow" 
-        Camera -value "Allow"  
-        Microphone -value "Allow"    
-        SpeachInkingTyping -enable $true
-        AccountInfo -value "Allow"
-        Contacts -value "Allow"
-        Calendar -value "Allow"
-        Messaging -value "Allow"
-        Radios -value "Allow"
-        OtherDevices -value "Allow"
-        FeedbackFrequency -value -1
-
+        Set-MiscPrivacyFeature -enable $true
+        Set-StrictPrivacyFeature -enable $true  
         Report
     }
 
