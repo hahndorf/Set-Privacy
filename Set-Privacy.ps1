@@ -11,6 +11,7 @@
     Turns off certain things but not everything.
 .PARAMETER Admin
     Updates machine settings rather than user settings, still requires Strong,Balanced or Default switches. Needs to run as elevated admin.
+    If this switch is selected, no user settings are changed.
 
 .EXAMPLE       
     Set-Privacy -Balanced
@@ -308,7 +309,7 @@ Begin
         DeviceAccessName -name "LooselyCoupled" -value $value
     }
 
-    Function NumberOfSIUFInPeriod([int]$value){
+    Function FeedbackFrequency([int]$value){
 
         if ($value -lt 0)
         {
@@ -340,12 +341,14 @@ Begin
 
     Function Telemetry ([bool]$enable){
 
+        # http://winaero.com/blog/how-to-disable-telemetry-and-data-collection-in-windows-10/
+
         if ($enable)
         {
             Set-service -Name DiagTrack -Status Running -StartupType Automatic
             & sc.exe config dmwappushservice start= delayed-auto
             Set-service -Name dmwappushservice -Status Running
-            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollectiong" -Name AllowTelemetry -Value 1
+            Remove-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry
         }
         else
         {
@@ -353,7 +356,7 @@ Begin
             Stop-Service -Name DiagTrack -Force
             Set-service -Name DiagTrack -StartupType Disabled
             Set-service -Name dmwappushservice -StartupType Disabled  
-            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollectiong" -Name AllowTelemetry -Value 0                      
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry -Value 0                      
         }
     }
     
@@ -404,6 +407,7 @@ Process
         Report
     }
 
+    # this gets internal IDs for certain Apps like Cortana which we need in some functions
     Get-AppSID
 
     if ($Strong)
@@ -424,7 +428,7 @@ Process
         Messaging -value "Deny"
         Radios -value "Deny"
         LooselyCoupled -value "Deny"
-        NumberOfSIUFInPeriod -value 0        
+        FeedbackFrequency -value 0        
         Report        
     }
 
@@ -446,7 +450,7 @@ Process
         Messaging -value "Deny"
         Radios -value "Deny"
         LooselyCoupled -value "Deny"
-        NumberOfSIUFInPeriod -value 0
+        FeedbackFrequency -value 0
 
         Report        
     }
@@ -467,7 +471,7 @@ Process
         Messaging -value "Allow"
         Radios -value "Allow"
         LooselyCoupled -value "Allow"
-        NumberOfSIUFInPeriod -value -1
+        FeedbackFrequency -value -1
 
         Report
     }
