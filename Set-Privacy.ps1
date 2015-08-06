@@ -348,6 +348,7 @@ Begin
             Set-service -Name DiagTrack -Status Running -StartupType Automatic
             & sc.exe config dmwappushservice start= delayed-auto
             Set-service -Name dmwappushservice -Status Running
+            # just setting the value to zero did not do the trick.
             Remove-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry
         }
         else
