@@ -62,44 +62,168 @@ To change the execution policy permanently, run:
 	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 
-##Changes in the Privacy section (user mode)
+##What does the script change?
 
-Changes are made on all tabs except `Diagnostic and usage data on the Feedback and diagnostics tab` and the `Background Apps` tab.
+Here's a list of things the three different modes (-Default,-Balanced,-Strong) change.
 
-**-Strong** turns off as many settings as possible
+A * means the feature will be enabled, a - means it will be disabled.
 
-**-Balanced** keeps: General-SmartScreen and General-LanguageList on
+The names can be used with the -Features parameter to specify individual settings to change.
 
-**-Default** turns on everything
-
-##Changes in -admin mode
-
-###Automatic Updates
-
-Choose How Updates Are Delivered:
-
-**-Strong** turns off sharing
-
-**-Balanced** enables sharing on the local network
-
-**-Default** enabled sharing with the internet
-
-###Wi-Fi Sense
-
-**-Strong and -Balanced** turn off something, but as I don't have Wi-Fi, I couldn't test this.
-
-**-Default** turns it back on.
-
-###Windows Defender SpyNet
-
-**-Strong** turns off `Cloud-based protection` and `Sample submission`
-
-**-Balanced and -Default** allow both.
-
-###Diagnostic and usage data 
-
-This is on the Privacy - Feedback and diagnostics tab
-
-**-Strong and -Balanced** set this to `Basic`
-
-**-Default** sets this to `Full (Recommended)`
+<table>
+<tbody>
+<tr>
+<td colspan="5"><b>Privacy Section (per user)</b></td>
+</tr>
+<tr>
+<th>Name</th>
+<th>Default</th>
+<th>Balanced</th>
+<th>Strong</th>
+<th>Info</th>
+</tr>
+<tr>
+<td>AdvertisingId</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps use my advertising ID for experience across apps</td>
+</tr>
+<tr>
+<td>ImproveTyping</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Send Microsoft info about how to write to help us improve typing and writing in the future</td>
+</tr>
+<tr>
+<td>SmartScreen</td>
+<td>*</td>
+<td>*</td>
+<td>-</td>
+<td>SmartScreen Filter</td>
+</tr>
+<tr>
+<td>LanguageList</td>
+<td>*</td>
+<td>*</td>
+<td>-</td>
+<td>Let websites provice locally relevant content by accessing my language list</td>
+</tr>
+<tr>
+<td>Location</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Use location information for this user account</td>
+</tr>
+<tr>
+<td>Camera</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps use my camera</td>
+</tr>
+<tr>
+<td>Microphone</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps use my microphone</td>
+</tr>
+<tr>
+<td>SpeachInkingTyping</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>'Getting to know you' - monitoring voice input, inking and typing for Cortana</td>
+</tr>
+<tr>
+<td>AccountInfo</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps access my name, picture, and other account info</td>
+</tr>
+<tr>
+<td>Contacts</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Apps that can access your contacts</td>
+</tr>
+<tr>
+<td>Calendar</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps access my calandar</td>
+</tr>
+<tr>
+<td>Messaging</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps read or send messages (text or MMS)</td>
+</tr>
+<tr>
+<td>Radios</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps use Bluetooth and other radios</td>
+</tr>
+<tr>
+<td>OtherDevices</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let app share and sync data with other devices</td>
+</tr>
+<tr>
+<td>FeedbackFrequency</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Windows should ask for my feedback</td>
+</tr>
+<tr>
+<td colspan="5"><b>-admin switch (machine scope)</b></td>
+</tr>
+<tr>
+<th>Name</th>
+<th>Default</th>
+<th>Balanced</th>
+<th>Strong</th>
+<th>Info</th>
+</tr>
+<tr>
+<td>ShareUpdates</td>
+<td>*</td>
+<td>+</td>
+<td>-</td>
+<td>In addition to get updates from Microsoft share updates on local network (+) or with the Internet (*)</td>
+</tr>
+<tr>
+<td>WifiSense</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Sharing of Wi-Fi password and using Wi-Fi sense to connect to networks.</td>
+</tr>
+<tr>
+<td>Telemetry</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Diagnostic and usage data</td>
+</tr>
+<tr>
+<td>SpyNet</td>
+<td>*</td>
+<td>*</td>
+<td>-</td>
+<td>Windows Defender, cloud-based Protection and sample submission</td>
+</tr>
+</tbody>
+</table>
