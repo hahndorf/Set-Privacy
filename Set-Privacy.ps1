@@ -54,7 +54,7 @@ param(
     [switch]$Enable,
     [parameter(Mandatory=$true,ParameterSetName = "Enable")]
     [parameter(Mandatory=$true,ParameterSetName = "Disable")]
-    [ValidateSet("AdvertisingId","ImproveTyping","Location","Camera","Microphone","SpeachInkingTyping","AccountInfo","Contacts","Calendar","Messaging","Radios","OtherDevices","FeedbackFrequency","ShareUpdates","WifiSense","Telemetry","SpyNet")]
+    [ValidateSet("AdvertisingId","ImproveTyping","Location","Camera","Microphone","SpeachInkingTyping","AccountInfo","Contacts","Calendar","Messaging","Radios","OtherDevices","FeedbackFrequency","ShareUpdates","WifiSense","Telemetry","SpyNet","DoNotTrack","SearchSuggestions","PagePrediction","PhishingFilter")]
     [string[]]$Feature
 )           
 
@@ -123,6 +123,13 @@ Begin
         If (!(Test-Path $Path))
         {
             $parent = [System.IO.Path]::GetDirectoryName($path)
+
+            $grandParent = [System.IO.Path]::GetDirectoryName($parent)
+            If (!(Test-Path $grandParent))
+            {
+                New-item -Path $grandParent | Out-Null
+            }
+
             If (!(Test-Path $parent))
             {
                 New-item -Path $parent | Out-Null
@@ -347,6 +354,35 @@ Begin
         }
     }
 
+    # ----------- Edge Browser Privacy Functions -----------
+
+    [string]$EdgeKey = "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge"
+
+    Function DoNotTrack([int]$value){
+
+       # 1 adds the Do Not Track Header, 0 does not
+        Add-RegistryDWord -Path "$EdgeKey\Main" -Name DoNotTrack -Value $value
+    }
+
+    Function SearchSuggestions([int]$value){
+    
+       # 0 disables search suggestions, 1 does not
+        Add-RegistryDWord -Path "$EdgeKey\User\Default\SearchScopes" -Name ShowSearchSuggestionsGlobal -Value $value
+    }
+
+    Function PagePrediction([int]$value){
+    
+       # 0 disables PagePrediction, 1 enables them
+        Add-RegistryDWord -Path "$EdgeKey\FlipAhead" -Name FPEnabled -Value $value
+    }
+
+    Function PhishingFilter([int]$value){
+    
+       # 0 disables PhishingFilter, 1 enables it
+        Add-RegistryDWord -Path "$EdgeKey\PhishingFilter" -Name EnabledV9 -Value $value
+    }
+
+
     # ----------- Machine Settings Functions -----------
 
     Function ShareUpdates([int]$value){
@@ -464,12 +500,14 @@ namespace Win32Api
         #enabled for -default, disabled for -strong and -balanced
 
         $AllowDeny = "Deny"
-        $OnOff = 0        
+        $OnOff = 0      
+        $OffOn = 1  
         
         if ($enable)
         {
-            $AllowDeny = "Deny"
+            $AllowDeny = "Allow"
             $OnOff = 1
+            $OffOn = 0
         }
 
         # General
@@ -504,6 +542,13 @@ namespace Win32Api
         {
             FeedbackFrequency -value 0
         }
+
+        # Edge
+
+        DoNotTrack -value $OffOn
+        SearchSuggestions -value $OnOff 
+        PagePrediction -value $OnOff 
+        PhishingFilter -value $OnOff 
         
     }
 
@@ -610,7 +655,7 @@ Process
     }
 
 
-    $Features | ForEach-Object {
+    $Feature | ForEach-Object {
 
         switch ($_) 
             { 
@@ -647,6 +692,10 @@ Process
                 "WifiSense" {WifiSense -value $OnOff;break}                                                                    
                 "Telemetry" {Telemetry -enable $DoEnable;break} 
                 "SpyNet" {SpyNet -enable $DoEnable ;break}
+                "DoNotTrack" {DoNotTrack -value $OffOn;break}  
+                "SearchSuggestions" {SearchSuggestions -value $OnOff;break}  
+                "PagePrediction" {PagePrediction -value $OnOff;break}  
+                "PhishingFilter" {PhishingFilter -value $OnOff;break}  
                 default {"ooops, nothing selected"}
             }
     }

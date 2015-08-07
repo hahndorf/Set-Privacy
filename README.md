@@ -68,7 +68,7 @@ Here's a list of things the three different modes (-Default,-Balanced,-Strong) c
 
 A * means the feature will be enabled, a - means it will be disabled.
 
-The names can be used with the -Features parameter to specify individual settings to change.
+The names can be used with the -Feature parameter to specify individual settings to change.
 
 <table>
 <tbody>
@@ -187,6 +187,39 @@ The names can be used with the -Features parameter to specify individual setting
 <td>-</td>
 <td>Windows should ask for my feedback</td>
 </tr>
+
+<tr>
+<td>DoNotTrack</td>
+<td>-</td>
+<td>*</td>
+<td>*</td>
+<td>Edge - Add a Do-Not-Track http header</td>
+</tr>
+
+<tr>
+<td>SearchSuggestions</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Edge - Search suggestions</td>
+</tr>
+
+<tr>
+<td>PagePrediction</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Edge - Preload expected pages</td>
+</tr>
+
+<tr>
+<td>PhishingFilter</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Edge - SmartScreen filter for malicious sites</td>
+</tr>
+
 <tr>
 <td colspan="5"><b>-admin switch (machine scope)</b></td>
 </tr>
