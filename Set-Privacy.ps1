@@ -448,7 +448,7 @@ namespace Win32Api
         $acl.SetOwner([System.Security.Principal.NTAccount]$adminGroupName)
         $key.SetAccessControl($acl)
 
-        $rule = New-Object System.Security.AccessControl.RegistryAccessRule ("BUILTIN\$adminGroupName","FullControl","Allow")
+        $rule = New-Object System.Security.AccessControl.RegistryAccessRule ("$adminGroupName","FullControl","Allow")
         $acl.SetAccessRule($rule)
         $key.SetAccessControl($acl)
 
