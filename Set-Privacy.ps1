@@ -181,7 +181,7 @@ Begin
 
         If (Test-RegistryValue $Path $Name)
         {
-            Set-ItemProperty -Path $Path -Name $Name –Value $value
+            Set-ItemProperty -Path $Path -Name $Name -Value $value
         }
         else
         {
