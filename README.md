@@ -9,7 +9,7 @@ This is still a work in progress. My current Windows 10 setup does not allow me 
 
 ## Requirements
 
-- Windows 10
+- Windows 10 or Windows Server 2016
 
 ##Getting the script
 
@@ -34,7 +34,7 @@ Assuming you are still in the location you downloaded the script to, run it with
 
 this sets the privacy settings for the current user to **Strong**, you also have the choice of **Default** (same as the Windows Express Setup settings) and **Balanced** (somewhere in the middle)
 
-There are some settings for computer rather than individual users, to change those run with the -admin switch
+There are some settings for the whole computer rather than individual users, to change those run with the -admin switch
 
     .\Set-Privacy.ps1 -Strong -admin
 
