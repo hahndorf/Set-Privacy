@@ -187,6 +187,13 @@ The names can be used with the -Feature parameter to specify individual settings
 <td>-</td>
 <td>Windows should ask for my feedback</td>
 </tr>
+<tr>
+<td>SearchWebResult</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let start menu search online and include web results</td>
+</tr>
 
 <tr>
 <td>DoNotTrack</td>

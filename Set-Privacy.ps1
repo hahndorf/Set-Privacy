@@ -354,6 +354,10 @@ Begin
         }
     }
 
+    Function SearchWebResult([int]$value){
+        Add-RegistryDWord "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name BingSearchEnabled -value $value
+    }
+
     # ----------- Edge Browser Privacy Functions -----------
 
     [string]$EdgeKey = "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge"
@@ -542,6 +546,8 @@ namespace Win32Api
         {
             FeedbackFrequency -value 0
         }
+        # Start Menu
+        SearchWebResult -value $OnOff
 
         # Edge
 
