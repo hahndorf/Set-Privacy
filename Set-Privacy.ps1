@@ -1,3 +1,34 @@
+<#PSScriptInfo
+
+.VERSION 1.0
+
+.GUID bd3a1ade-420c-4ac6-8558-b4f8df963aff
+
+.AUTHOR Peter Hahndorf
+
+.COMPANYNAME 
+
+.COPYRIGHT 
+
+.TAGS 
+
+.LICENSEURI https://raw.githubusercontent.com/hahndorf/Set-Privacy/master/LICENSE
+
+.PROJECTURI https://github.com/hahndorf/Set-Privacy
+
+.ICONURI 
+
+.EXTERNALMODULEDEPENDENCIES 
+
+.REQUIREDSCRIPTS 
+
+.EXTERNALSCRIPTDEPENDENCIES 
+
+.RELEASENOTES
+
+
+#>
+
 <#
 .SYNOPSIS
     PowerShell script to batch-change privacy settings in Windows 10
