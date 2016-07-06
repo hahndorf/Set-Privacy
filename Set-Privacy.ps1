@@ -509,17 +509,25 @@ namespace Win32Api
         if ($enable)
         {
             Set-service -Name DiagTrack -Status Running -StartupType Automatic
-            & sc.exe config dmwappushservice start= delayed-auto | Out-Null
-            Set-service -Name dmwappushservice -Status Running
+            if ((Get-Service | where Name -eq dmwappushservice).count -eq 1)
+            {
+                & sc.exe config dmwappushservice start= delayed-auto | Out-Null
+                Set-service -Name dmwappushservice -Status Running
+            }
             # just setting the value to zero did not do the trick.
             Remove-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry
         }
         else
-        {
-            Stop-Service -Name dmwappushservice -Force
+        {            
             Stop-Service -Name DiagTrack -Force
             Set-service -Name DiagTrack -StartupType Disabled
-            Set-service -Name dmwappushservice -StartupType Disabled  
+            
+            if((Get-Service | where Name -eq dmwappushservice).count -eq 1)
+            {
+                Stop-Service -Name dmwappushservice -Force
+                Set-service -Name dmwappushservice -StartupType Disabled
+            }
+
             Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry -Value 0                      
         }
     }
