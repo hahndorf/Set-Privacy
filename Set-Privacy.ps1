@@ -153,9 +153,9 @@ Begin
 
         If (!(Test-Path $Path))
         {
-            $parent = [System.IO.Path]::GetDirectoryName($path)
+            $parent = "$path\.."
 
-            $grandParent = [System.IO.Path]::GetDirectoryName($parent)
+            $grandParent = "$parent\.."
             If (!(Test-Path $grandParent))
             {
                 New-item -Path $grandParent | Out-Null
