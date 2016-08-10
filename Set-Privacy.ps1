@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 1.0
+.VERSION 1.0.1
 
 .GUID bd3a1ade-420c-4ac6-8558-b4f8df963aff
 
@@ -25,7 +25,7 @@
 .EXTERNALSCRIPTDEPENDENCIES 
 
 .RELEASENOTES
-
+   1.0.1 - 10-Aug-2016 Fixed a bug on Version 1607 with handling registry paths
 
 #>
 
