@@ -435,6 +435,13 @@ Begin
         Add-RegistryDWord -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\features" -Name WiFiSenseOpen -Value $value        
     }
 
+    # http://winaero.com/blog/fix-windows-10-installs-apps-like-candy-crush-soda-saga-automatically/
+    Function NoCloudApps([int]$value){
+        Test-Admin
+        Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name DisableWindowsConsumerFeatures -Value $value
+    }
+
+
     Function SpyNet([bool]$enable){
 
         # Access to these registry keys are not allowed for administrators
@@ -551,7 +558,7 @@ namespace Win32Api
 
         # General
         AdvertisingId -value $OnOff
-        ImproveTyping -value $OnOff          
+        ImproveTyping -value $OnOff
         # Location
         Location -value $AllowDeny
         # Camera
@@ -631,7 +638,8 @@ Process
             WifiSense -value 0
             Telemetry -enable $false
             SpyNet -enable $false
-        }
+			NoCloudApps -value 1
+		}
         if ($Balanced)
         {
             # allow LAN sharing of updates
@@ -640,6 +648,7 @@ Process
             Telemetry -enable $false
             # in balanced mode, we don't disable SpyNet
             SpyNet -enable $true
+			NoCloudApps -value 1
         }
         if ($Default)
         {
@@ -647,6 +656,7 @@ Process
             WifiSense -value 1
             Telemetry -enable $true
             SpyNet -enable $true
+			NoCloudApps -value 0
         }
 
         Report
