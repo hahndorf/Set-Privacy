@@ -33,7 +33,7 @@
 
 <#
 .SYNOPSIS
-    PowerShell script to batch-change privacy settings in Windows 10
+    PowerShell script to batch-change privacy settings in Windows 10 and Server 2016+
 .DESCRIPTION
     With so many different privacy settings in Windows 10, it makes sense to have a script to change them.
 .PARAMETER Strong
@@ -41,7 +41,7 @@
 .PARAMETER Default
     Reverts to Windows defaults 
 .PARAMETER Balanced
-    Turns off certain things but not everything.
+    Turns off most things but not everything.
 .PARAMETER Admin
     Updates machine settings rather than user settings, still requires Strong,Balanced or Default switches. Needs to run as elevated admin.
     If this switch is selected, no user settings are changed.
@@ -50,8 +50,11 @@
 .PARAMETER Disable
     Use with -Features to disable all those features
 .PARAMETER Enable
-   Use with -Features to enable all those features
+    Use with -Features to enable all those features
 
+.EXAMPLE       
+    Set-Privacy -Strong
+    Sets strong privacy settings for the current user
 .EXAMPLE       
     Set-Privacy -Balanced
     Runs the script to set the balanced privacy settings  
@@ -62,7 +65,7 @@
     Set-Privacy -disable -Features WifiSense,ShareUpdates,Contacts 
     Disabled those three features to improve your privacy   
 .NOTES
-    Requires Windows 10 and higher
+    Requires Windows 10 or higher
     Author:  Peter Hahndorf
     Created: August 4th, 2015 
     
@@ -87,7 +90,10 @@ param(
     [switch]$Enable,
     [parameter(Mandatory=$true,ParameterSetName = "Enable")]
     [parameter(Mandatory=$true,ParameterSetName = "Disable")]
-    [ValidateSet("AdvertisingId","ImproveTyping","Location","Camera","Microphone","SpeachInkingTyping","AccountInfo","Contacts","Calendar","Messaging","Radios","OtherDevices","FeedbackFrequency","ShareUpdates","WifiSense","Telemetry","SpyNet","DoNotTrack","SearchSuggestions","PagePrediction","PhishingFilter","StartTrackProgs","AppNotifications","CallHistory")]
+    [ValidateSet("AdvertisingId","ImproveTyping","Location","Camera","Microphone","SpeachInkingTyping",`
+    "AccountInfo","Contacts","Calendar","Messaging","Radios","OtherDevices","FeedbackFrequency","ShareUpdates",`
+    "WifiSense","Telemetry","SpyNet","DoNotTrack","SearchSuggestions","PagePrediction","PhishingFilter",`
+    "StartTrackProgs","AppNotifications","CallHistory","Email","Tasks","AppDiagnostics","TailoredExperiences")]
     [string[]]$Feature
 )           
 
@@ -328,6 +334,14 @@ Begin
         DeviceAccess -guid "8BC668CF-7728-45BD-93F8-CF2B3B41D7AB" -value $value
     }
 
+    Function Email([string]$value){
+        DeviceAccess -guid "9231CB4C-BF57-4AF3-8C55-FDA7BFCC04C5" -value $value
+    }
+
+    Function Tasks([string]$value){
+        DeviceAccess -guid "E390DF20-07DF-446D-B962-F5C953062741" -value $value
+    }
+
     Function Contacts([string]$value){
 
         $exclude = $script:sidCortana + "|" + $script:sidPeople
@@ -397,6 +411,10 @@ Begin
         DeviceAccess -guid "52079E78-A92B-413F-B213-E8FE35712E72" -value $value
     }    
 
+    Function AppDiagnostics([string]$value){
+        DeviceAccess -guid "2297E4E2-5DBE-466D-A12B-0F8286F0D9CA" -value $value
+    } 
+
     # ----------- Edge Browser Privacy Functions -----------
 
     [string]$EdgeKey = "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge"
@@ -428,6 +446,11 @@ Begin
     Function StartTrackProgs([int]$value)
     {
         Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name Start_TrackProgs -Value $value
+    }
+
+    Function TailoredExperiences([int]$value)
+    {
+        Add-RegistryDWord -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy" -Name TailoredExperiencesWithDiagnosticDataEnabled -Value $value
     }
 
     # ----------- Machine Settings Functions -----------
@@ -544,7 +567,8 @@ namespace Win32Api
                 Set-service -Name dmwappushservice -StartupType Disabled
             }
 
-            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry -Value 0                      
+            Add-RegistryDWord -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry -Value 0 
+                                            
         }
     }
 
@@ -592,7 +616,12 @@ namespace Win32Api
         AppNotifications -value $AllowDeny
         # Let apps access my call history
         CallHistory -value $AllowDeny
-
+        # Let Apps access and send email
+        Email -value $AllowDeny
+        # Let apps access tasks
+        Tasks -value $AllowDeny
+        # Let apps access diagnostics of other apps
+        AppDiagnostics -value $AllowDeny
         # Feedback & diagnostics         
         if ($enable)
         {
@@ -610,6 +639,7 @@ namespace Win32Api
         PagePrediction -value $OnOff 
         PhishingFilter -value $OnOff 
         StartTrackProgs -value $OnOff
+        TailoredExperiences -value $OnOff
         
     }
 
@@ -736,6 +766,9 @@ Process
                 "OtherDevices" {OtherDevices -value $AllowDeny;break} 
                 "AppNotifications" {AppNotifications -value $AllowDeny;break}
                 "CallHistory" {CallHistory -value $AllowDeny;break}
+                "Email" {Email -value $AllowDeny;break}
+                "Tasks" {Tasks -value $AllowDeny;break}
+                "AppDiagnostics"{AppDiagnostics -value $AllowDeny;break}
                 "FeedbackFrequency" {
                         if ($Enable) {
                             FeedbackFrequency -value -1;
@@ -762,6 +795,7 @@ Process
                 "PagePrediction" {PagePrediction -value $OnOff;break}  
                 "PhishingFilter" {PhishingFilter -value $OnOff;break}  
                 "StartTrackProgs" {StartTrackProgs -value $OnOff;break}
+                "TailoredExperiences"{TailoredExperiences -value $OnOff;break}
                 default {"ooops, nothing selected"}
             }
     }
