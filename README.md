@@ -5,7 +5,7 @@ PowerShell script to batch-change privacy settings in Windows 10
 
 With so many different privacy settings in Windows 10, it makes sense to have a script to change them.
 
-This is still a work in progress. My current Windows 10 setup does not allow me to test all the various privacy settings.
+April 2017 - Updated script to include all new privacy settings in Version 1703 (Creator's Update)
 
 ## Requirements
 
@@ -243,6 +243,37 @@ The names can be used with the -Feature parameter to specify individual settings
 <td>-</td>
 <td>Let apps access my call history</td>
 </tr>
+
+<tr>
+<td>Email</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let Apps access and send email</td>
+</tr>
+<tr>
+<td>Tasks</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps access tasks</td>
+</tr>
+<tr>
+<td>AppDiagnostics</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps access diagnostics of other apps</td>
+</tr>
+<tr>
+<td>TailoredExperiences</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let Microsoft provide more tailored experiences with relevant tips...</td>
+</tr>
+
+
 
 <tr>
 <td colspan="5"><b>-admin switch (machine scope)</b></td>
