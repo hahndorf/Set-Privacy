@@ -11,7 +11,7 @@ This is still a work in progress. My current Windows 10 setup does not allow me 
 
 - Windows 10 or Windows Server 2016
 
-##Getting the script
+## Getting the script
 
 There are several ways to get the script file to your computer, download the zip, clone the repository, save the content manually into a file. 
 You can also get it with PowerShell:
@@ -26,7 +26,7 @@ then download the script by running the following:
 
 After downloading a PowerShell script from the Internet, you should always review it to make sure it doesn't do anything bad.
 
-##Running the script
+## Running the script
 
 Assuming you are still in the location you downloaded the script to, run it with one of the required parameters:
 
@@ -38,13 +38,13 @@ There are some settings for the whole computer rather than individual users, to 
 
     .\Set-Privacy.ps1 -Strong -admin
 
-###Getting more help
+### Getting more help
 
 To find out more about the parameters you can use for the script:
 
     help .\Set-Privacy.ps1 -full
 
-##Problems running the script
+## Problems running the script
 
 You may get one of the following messages when trying to run a script:
 
@@ -62,7 +62,7 @@ To change the execution policy permanently, run:
 	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 
-##What does the script change?
+## What does the script change?
 
 Here's a list of things the three different modes (-Default,-Balanced,-Strong) change.
 
@@ -218,6 +218,30 @@ The names can be used with the -Feature parameter to specify individual settings
 <td>-</td>
 <td>-</td>
 <td>Edge - SmartScreen filter for malicious sites</td>
+</tr>
+
+<tr>
+<td>StartTrackProgs</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let Windows track app launches to improve Start and search results</td>
+</tr>
+
+<tr>
+<td>AppNotifications</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps access my notifications</td>
+</tr>
+
+<tr>
+<td>CallHistory</td>
+<td>*</td>
+<td>-</td>
+<td>-</td>
+<td>Let apps access my call history</td>
 </tr>
 
 <tr>

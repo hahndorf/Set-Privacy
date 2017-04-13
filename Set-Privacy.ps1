@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 1.0.1
+.VERSION 1.1.0
 
 .GUID bd3a1ade-420c-4ac6-8558-b4f8df963aff
 
@@ -26,6 +26,8 @@
 
 .RELEASENOTES
    1.0.1 - 10-Aug-2016 Fixed a bug on Version 1607 with handling registry paths
+   1.1.0 - 13-Apr-2017 Added setting introducted by the Creator's Update (Vs.1703)
+                       Fixed a bug enabling named features.
 
 #>
 
@@ -85,7 +87,7 @@ param(
     [switch]$Enable,
     [parameter(Mandatory=$true,ParameterSetName = "Enable")]
     [parameter(Mandatory=$true,ParameterSetName = "Disable")]
-    [ValidateSet("AdvertisingId","ImproveTyping","Location","Camera","Microphone","SpeachInkingTyping","AccountInfo","Contacts","Calendar","Messaging","Radios","OtherDevices","FeedbackFrequency","ShareUpdates","WifiSense","Telemetry","SpyNet","DoNotTrack","SearchSuggestions","PagePrediction","PhishingFilter")]
+    [ValidateSet("AdvertisingId","ImproveTyping","Location","Camera","Microphone","SpeachInkingTyping","AccountInfo","Contacts","Calendar","Messaging","Radios","OtherDevices","FeedbackFrequency","ShareUpdates","WifiSense","Telemetry","SpyNet","DoNotTrack","SearchSuggestions","PagePrediction","PhishingFilter","StartTrackProgs","AppNotifications","CallHistory")]
     [string[]]$Feature
 )           
 
@@ -322,9 +324,15 @@ Begin
         DeviceAccess -guid "2EEF81BE-33FA-4800-9670-1CD474972C3F" -value $value
     }
 
+    Function CallHistory([string]$value){
+        DeviceAccess -guid "8BC668CF-7728-45BD-93F8-CF2B3B41D7AB" -value $value
+    }
+
     Function Contacts([string]$value){
 
         $exclude = $script:sidCortana + "|" + $script:sidPeople
+
+        DeviceAccess -guid "7D7E8402-7C54-4821-A34E-AEEFD62DED93" -value $value
 
         Get-ChildItem HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeviceAccess | ForEach-Object{
 
@@ -385,6 +393,10 @@ Begin
         }
     }
 
+    Function AppNotifications([string]$value){
+        DeviceAccess -guid "52079E78-A92B-413F-B213-E8FE35712E72" -value $value
+    }    
+
     # ----------- Edge Browser Privacy Functions -----------
 
     [string]$EdgeKey = "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge"
@@ -413,6 +425,10 @@ Begin
         Add-RegistryDWord -Path "$EdgeKey\PhishingFilter" -Name EnabledV9 -Value $value
     }
 
+    Function StartTrackProgs([int]$value)
+    {
+        Add-RegistryDWord -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name Start_TrackProgs -Value $value
+    }
 
     # ----------- Machine Settings Functions -----------
 
@@ -572,6 +588,11 @@ namespace Win32Api
         Radios -value $AllowDeny
         # Other devices
         OtherDevices -value $AllowDeny
+        # Let Apps Access My notifications
+        AppNotifications -value $AllowDeny
+        # Let apps access my call history
+        CallHistory -value $AllowDeny
+
         # Feedback & diagnostics         
         if ($enable)
         {
@@ -588,6 +609,7 @@ namespace Win32Api
         SearchSuggestions -value $OnOff 
         PagePrediction -value $OnOff 
         PhishingFilter -value $OnOff 
+        StartTrackProgs -value $OnOff
         
     }
 
@@ -610,6 +632,8 @@ namespace Win32Api
 }
 Process
 {
+    Write-Output "Processing settings..."
+
     
     $myOS = Get-CimInstance -ClassName Win32_OperatingSystem -Namespace root/cimv2 -Verbose:$false
 
@@ -687,7 +711,7 @@ Process
         
     if ($Enable)
     {
-        $AllowDeny = "Deny"
+        $AllowDeny = "Allow"
         $OnOff = 1
         $OffOn = 0
         $DoEnable = $true 
@@ -710,6 +734,8 @@ Process
                 "Messaging" {Messaging -value $AllowDeny;break} 
                 "Radios" {Radios -value $AllowDeny;break} 
                 "OtherDevices" {OtherDevices -value $AllowDeny;break} 
+                "AppNotifications" {AppNotifications -value $AllowDeny;break}
+                "CallHistory" {CallHistory -value $AllowDeny;break}
                 "FeedbackFrequency" {
                         if ($Enable) {
                             FeedbackFrequency -value -1;
@@ -735,6 +761,7 @@ Process
                 "SearchSuggestions" {SearchSuggestions -value $OnOff;break}  
                 "PagePrediction" {PagePrediction -value $OnOff;break}  
                 "PhishingFilter" {PhishingFilter -value $OnOff;break}  
+                "StartTrackProgs" {StartTrackProgs -value $OnOff;break}
                 default {"ooops, nothing selected"}
             }
     }
