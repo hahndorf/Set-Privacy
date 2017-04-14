@@ -16,7 +16,7 @@
 
 .PROJECTURI https://github.com/hahndorf/Set-Privacy
 
-.ICONURI 
+.ICONURI https://github.com/hahndorf/Set-Privacy/blob/master/set-privacy.png
 
 .EXTERNALMODULEDEPENDENCIES 
 
