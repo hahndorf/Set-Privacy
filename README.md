@@ -28,6 +28,14 @@ After downloading a PowerShell script from the Internet, you should always revie
 
      ise .\Set-Privacy.ps1
 
+## Getting the script 2
+
+You could also open an elevated PowerShell window and run:
+
+     Install-Script -Name Set-Privacy
+
+You may have to confirm a few additional things, but this should be the easiest way.
+
 ## Running the script
 
 Assuming you are still in the location you downloaded the script to, run it with one of the required parameters:
