@@ -26,6 +26,8 @@ then download the script by running the following:
 
 After downloading a PowerShell script from the Internet, you should always review it to make sure it doesn't do anything bad.
 
+     ise .\Set-Privacy.ps1
+
 ## Running the script
 
 Assuming you are still in the location you downloaded the script to, run it with one of the required parameters:
@@ -38,11 +40,16 @@ There are some settings for the whole computer rather than individual users, to 
 
     .\Set-Privacy.ps1 -Strong -admin
 
+To do this, your PowerShell session has to run under an elevated administrator account.
+
 ### Getting more help
 
 To find out more about the parameters you can use for the script:
 
     help .\Set-Privacy.ps1 -full
+
+## Script Output
+The script shows the actual registry settings it is changing. A green line means, the settings was already in place and has not been changed. A yellow line means the settings has been changed.
 
 ## Problems running the script
 
@@ -315,3 +322,14 @@ The names can be used with the -Feature parameter to specify individual settings
 </tr>
 </tbody>
 </table>
+
+
+## What is NOT changed?
+
+There are a few things this script doesn't change:
+
+* Background Apps - I don't consider this a privacy issue, even though it appeas under the privacy section of the Windows 10 settings app.
+
+* Any other tweaks and changes that may be nice to have but have nothing to do with privacy
+
+* SpyNet Reporting - Administratrators can no longer change this settings. Sample submission is still turned off in -strong mode.
