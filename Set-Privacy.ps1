@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 1.1703.0
+.VERSION 1.1703.1
 
 .GUID bd3a1ade-420c-4ac6-8558-b4f8df963aff
 
@@ -31,6 +31,7 @@
    1.1703.0 - 14-April-2017 Changed version number to reflect matching Windows
                             version and added more details to the readme file.
                             Removed SpyNet feature.
+   1.1703.1 - 15-April-2017 Updated Icon and iconUri
 
 #>
 
